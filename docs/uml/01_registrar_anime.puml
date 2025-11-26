@@ -1,0 +1,31 @@
+@startuml
+title Registrar Nuevo Anime
+skinparam monochrome true
+
+actor Usuario
+participant "AnimePanel" as UI
+participant "AnimeService" as Service
+participant "AnimeRepository" as Repo
+
+Usuario -> UI: Clic "Nueva Serie"
+UI -> UI: Muestra formulario
+Usuario -> UI: Completa datos
+Usuario -> UI: Clic "Guardar"
+
+UI -> Service: registrarSerie(titulo, anio, ...)
+activate Service
+
+Service -> Service: validarTitulo()
+Service -> Service: validarAnio()
+Service -> Repo: existsByTitulo(titulo)
+Repo --> Service: false
+
+Service -> Service: new AnimeSerie(...)
+Service -> Repo: save(anime)
+Repo --> Service: void
+
+Service --> UI: AnimeSerie creada
+deactivate Service
+
+UI -> Usuario: "Serie creada correctamente"
+@enduml

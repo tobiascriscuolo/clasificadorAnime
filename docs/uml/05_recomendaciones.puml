@@ -1,0 +1,36 @@
+@startuml
+title Obtener Recomendaciones (Strategy Pattern)
+skinparam monochrome true
+
+actor Usuario
+participant "RecomendacionesPanel" as Panel
+participant "RecomendacionService" as Service
+participant "CriterioRecomendacion" as Criterio
+
+Usuario -> Panel: Selecciona "Top por Genero"
+Usuario -> Panel: Genero: SHONEN, Cantidad: 5
+Usuario -> Panel: Clic "Obtener"
+
+Panel -> Service: getTopPorGenero(SHONEN, 5)
+activate Service
+
+Service -> Criterio: new TopPorGenero(SHONEN)
+Service -> Criterio: recomendar(animes, 5)
+activate Criterio
+
+note right of Criterio
+  Strategy Pattern:
+  Algoritmo intercambiable
+end note
+
+Criterio -> Criterio: filtrar por genero
+Criterio -> Criterio: ordenar por calificacion
+Criterio -> Criterio: limit(5)
+Criterio --> Service: List<AnimeBase>
+deactivate Criterio
+
+Service --> Panel: Top 5 Shonen
+deactivate Service
+
+Panel --> Usuario: Muestra resultados
+@enduml

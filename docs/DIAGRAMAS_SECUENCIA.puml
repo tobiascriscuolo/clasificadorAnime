@@ -1,0 +1,513 @@
+@startuml Registrar_Nuevo_Anime
+title Caso de Uso: Registrar Nuevo Animé (Serie)
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor Usuario
+participant "MainFrame\n(UI)" as UI
+participant "AnimePanel\n(Vista)" as Panel
+participant "AnimeSerieDialog\n(Diálogo)" as Dialog
+participant "AnimeService\n(Controller)" as Service
+participant "AnimeRepository\n(Interfaz)" as RepoI
+participant "FileAnimeRepository\n(Implementación)" as Repo
+
+== Flujo Principal ==
+
+Usuario -> UI: Clic en menú "Animé > Nueva Serie"
+activate UI
+
+UI -> Panel: mostrarDialogoNuevaSerie()
+activate Panel
+
+Panel -> Dialog: new AnimeSerieDialog(null)
+activate Dialog
+
+Dialog --> Usuario: Muestra formulario vacío
+
+Usuario -> Dialog: Completa datos:\n- Título: "Naruto"\n- Año: 2002\n- Estudio: "Pierrot"\n- Capítulos: 220\n- Géneros: [SHONEN, ACTION]
+
+Usuario -> Dialog: Clic "Guardar"
+
+Dialog -> Service: registrarSerie(titulo, año, estudio, capitulos, generos, enEmision)
+activate Service
+
+note right of Service
+  GRASP Controller:
+  Coordina el caso de uso
+  y aplica validaciones
+end note
+
+Service -> Service: validarTitulo(titulo)
+Service -> Service: validarAnio(anio)
+Service -> Service: validarCapitulos(capitulos)
+Service -> Service: validarGeneros(generos)
+
+Service -> RepoI: existsByTitulo("Naruto")
+activate RepoI
+RepoI -> Repo: existsByTitulo("Naruto")
+activate Repo
+Repo --> RepoI: false
+deactivate Repo
+RepoI --> Service: false
+deactivate RepoI
+
+note right of Service
+  GRASP Creator:
+  El servicio crea la instancia
+  porque tiene la información necesaria
+end note
+
+Service -> Service: new AnimeSerie(titulo, año, estudio, capitulos, generos)
+
+Service -> RepoI: save(anime)
+activate RepoI
+
+note right of RepoI
+  SOLID DIP:
+  Service depende de la interfaz,
+  no de la implementación concreta
+end note
+
+RepoI -> Repo: save(anime)
+activate Repo
+
+note right of Repo
+  GRASP Pure Fabrication:
+  Clase técnica para persistencia
+end note
+
+Repo -> Repo: loadIfNeeded()
+Repo -> Repo: cache.add(anime)
+Repo -> Repo: persist()
+Repo --> RepoI: void
+deactivate Repo
+RepoI --> Service: void
+deactivate RepoI
+
+Service --> Dialog: AnimeSerie creada
+deactivate Service
+
+Dialog -> Dialog: confirmado = true
+
+Dialog -> Usuario: JOptionPane.showMessageDialog("Serie creada correctamente")
+
+Dialog -> Dialog: dispose()
+deactivate Dialog
+
+Panel -> Panel: refrescar()
+Panel -> Service: listarOrdenadosPorTitulo()
+activate Service
+Service --> Panel: List<AnimeBase>
+deactivate Service
+
+Panel --> UI: Tabla actualizada
+deactivate Panel
+
+deactivate UI
+
+== Flujo Alternativo: Título Duplicado ==
+
+Usuario -> Dialog: Intenta crear anime con título existente
+Dialog -> Service: registrarSerie(...)
+activate Service
+Service -> RepoI: existsByTitulo(titulo)
+RepoI --> Service: true
+Service -> Service: throw AnimeYaExistenteException
+deactivate Service
+Dialog -> Usuario: JOptionPane.showMessageDialog(\n"Ya existe un anime con el título: ...")
+
+== Flujo Alternativo: Validación Fallida ==
+
+Usuario -> Dialog: Deja título vacío
+Dialog -> Service: registrarSerie("", ...)
+activate Service
+Service -> Service: validarTitulo("")
+Service -> Service: throw ValidacionException("El título no puede estar vacío")
+deactivate Service
+Dialog -> Usuario: JOptionPane.showMessageDialog(\n"Error de validación: ...")
+
+@enduml
+
+
+@startuml Aplicar_Filtro
+title Caso de Uso: Aplicar Filtro y Mostrar Resultados
+skinparam sequenceMessageAlign center
+
+actor Usuario
+participant "AnimePanel\n(Vista)" as Panel
+participant "FiltroAnime\n(Builder)" as Filtro
+participant "AnimeService\n(Controller)" as Service
+participant "AnimeRepository" as Repo
+participant "CriterioOrdenamiento\n(Strategy)" as Ordenamiento
+
+== Flujo Principal ==
+
+Usuario -> Panel: Selecciona género "Shonen"
+activate Panel
+
+Usuario -> Panel: Selecciona calificación mínima 4
+
+Usuario -> Panel: Clic "Buscar"
+
+Panel -> Panel: aplicarFiltros()
+
+note right of Panel
+  La UI solo captura datos
+  y delega al servicio
+  (MVC - Vista)
+end note
+
+Panel -> Filtro: new FiltroAnime()
+activate Filtro
+
+note right of Filtro
+  Patrón Builder:
+  Construye predicados
+  de forma fluida
+end note
+
+Panel -> Filtro: porGenero(SHONEN)
+Filtro --> Panel: this (encadenado)
+
+Panel -> Filtro: porCalificacionMinima(4)
+Filtro --> Panel: this (encadenado)
+
+Panel -> Filtro: build()
+Filtro --> Panel: Predicate<AnimeBase>
+deactivate Filtro
+
+Panel -> Service: busquedaAvanzada(filtro)
+activate Service
+
+note right of Service
+  GRASP Controller:
+  Coordina la búsqueda
+end note
+
+Service -> Repo: findAll()
+activate Repo
+Repo --> Service: List<AnimeBase> (todos)
+deactivate Repo
+
+Service -> Service: animes.stream()\n  .filter(filtro.build())\n  .collect()
+
+note right of Service
+  GRASP Information Expert:
+  Cada anime responde si cumple
+  el criterio (perteneceAGenero,
+  cumpleCalificacionMinima)
+end note
+
+Service --> Panel: List<AnimeBase> (filtrados)
+deactivate Service
+
+Panel -> Panel: obtenerCriterioOrdenamiento()
+
+Panel -> Ordenamiento: new OrdenamientoPorCalificacion(descendente=true)
+activate Ordenamiento
+
+note right of Ordenamiento
+  SOLID OCP / GRASP Polymorphism:
+  Criterio de ordenamiento
+  intercambiable
+end note
+
+Panel -> Service: ordenar(listaFiltrada, criterio)
+activate Service
+
+Service -> Service: resultado.sort(criterio)
+
+note right of Ordenamiento
+  Strategy Pattern:
+  El criterio define el algoritmo
+  de comparación
+end note
+
+Service --> Panel: List<AnimeBase> (ordenada)
+deactivate Service
+deactivate Ordenamiento
+
+Panel -> Panel: tableModel.setAnimes(resultado)
+
+Panel --> Usuario: Tabla muestra anime filtrados\ny ordenados por calificación
+
+deactivate Panel
+
+== Flujo Alternativo: Sin Resultados ==
+
+Usuario -> Panel: Aplica filtros muy restrictivos
+Panel -> Service: busquedaAvanzada(filtro)
+activate Service
+Service --> Panel: List vacía
+deactivate Service
+Panel --> Usuario: Tabla vacía
+
+== Flujo: Limpiar Filtros ==
+
+Usuario -> Panel: Clic "Limpiar filtros"
+activate Panel
+
+Panel -> Panel: limpiarFiltros()
+Panel -> Panel: txtBusqueda.setText("")
+Panel -> Panel: cmbGenero.setSelectedIndex(0)
+Panel -> Panel: cmbEstado.setSelectedIndex(0)
+Panel -> Panel: spnCalificacionMin.setValue(0)
+
+Panel -> Panel: refrescar()
+Panel -> Service: listarOrdenadosPorTitulo()
+activate Service
+Service --> Panel: List<AnimeBase> (todos)
+deactivate Service
+
+Panel --> Usuario: Tabla muestra todos los anime
+
+deactivate Panel
+
+@enduml
+
+
+@startuml Obtener_Recomendaciones
+title Caso de Uso: Obtener Recomendaciones
+skinparam sequenceMessageAlign center
+
+actor Usuario
+participant "RecomendacionesPanel\n(Vista)" as Panel
+participant "RecomendacionService\n(Controller)" as Service
+participant "CriterioRecomendacion\n(Strategy)" as Criterio
+participant "AnimeRepository" as Repo
+
+== Flujo: Top por Género ==
+
+Usuario -> Panel: Selecciona "Top por Género"
+Usuario -> Panel: Selecciona género "Shonen"
+Usuario -> Panel: Cantidad: 5
+
+Usuario -> Panel: Clic "Obtener Recomendaciones"
+activate Panel
+
+Panel -> Service: getTopPorGenero(SHONEN, 5)
+activate Service
+
+note right of Service
+  GRASP Controller:
+  Coordina el caso de uso
+end note
+
+Service -> Criterio: new RecomendacionTopPorGenero(SHONEN)
+activate Criterio
+
+note right of Criterio
+  SOLID OCP:
+  Para nuevos criterios,
+  se agregan nuevas clases
+  sin modificar las existentes
+end note
+
+Service -> Service: obtenerRecomendaciones(criterio, 5)
+
+Service -> Repo: findAll()
+activate Repo
+Repo --> Service: List<AnimeBase>
+deactivate Repo
+
+Service -> Criterio: recomendar(animes, 5)
+
+note right of Criterio
+  GRASP Strategy/Polymorphism:
+  El criterio específico
+  implementa su algoritmo
+end note
+
+Criterio -> Criterio: animes.stream()\n  .filter(a -> a.perteneceAGenero(genero))\n  .filter(AnimeBase::tieneCalificacion)\n  .sorted(byCalificacion.reversed())\n  .limit(5)
+
+Criterio --> Service: List<AnimeBase> (top 5)
+deactivate Criterio
+
+Service --> Panel: List<AnimeBase>
+deactivate Service
+
+Panel -> Panel: tableModel.setAnimes(resultados)
+Panel -> Panel: lblDescripcion.setText(\n  "Top 5 anime de género Shonen")
+
+Panel --> Usuario: Muestra tabla con Top 5\nShonen mejor calificados
+
+deactivate Panel
+
+@enduml
+
+
+@startuml Agregar_A_Lista
+title Caso de Uso: Agregar Anime a Lista Personalizada
+skinparam sequenceMessageAlign center
+
+actor Usuario
+participant "AnimePanel" as AnimePanel
+participant "ListaPersonalizadaService" as ListaService
+participant "ListaPersonalizadaRepository" as ListaRepo
+participant "AnimeRepository" as AnimeRepo
+
+== Flujo Principal ==
+
+Usuario -> AnimePanel: Selecciona anime en tabla
+Usuario -> AnimePanel: Clic "Agregar a lista..."
+activate AnimePanel
+
+AnimePanel -> ListaService: listarTodas()
+activate ListaService
+ListaService -> ListaRepo: findAll()
+activate ListaRepo
+ListaRepo --> ListaService: List<ListaPersonalizada>
+deactivate ListaRepo
+ListaService --> AnimePanel: List<ListaPersonalizada>
+deactivate ListaService
+
+AnimePanel -> Usuario: JOptionPane.showInputDialog(\n  listas disponibles)
+
+Usuario -> AnimePanel: Selecciona "Favoritos"
+
+AnimePanel -> ListaService: agregarAnimeALista("Favoritos", "Naruto")
+activate ListaService
+
+note right of ListaService
+  GRASP Controller:
+  Coordina la operación
+  entre lista y anime
+end note
+
+ListaService -> ListaRepo: findByNombre("Favoritos")
+activate ListaRepo
+ListaRepo --> ListaService: Optional<ListaPersonalizada>
+deactivate ListaRepo
+
+ListaService -> AnimeRepo: findByTitulo("Naruto")
+activate AnimeRepo
+AnimeRepo --> ListaService: Optional<AnimeBase>
+deactivate AnimeRepo
+
+ListaService -> ListaService: lista.agregarAnime(anime)
+
+note right of ListaService
+  GRASP Information Expert:
+  La lista sabe cómo
+  agregar un anime
+end note
+
+ListaService -> ListaRepo: save(lista)
+activate ListaRepo
+ListaRepo --> ListaService: void
+deactivate ListaRepo
+
+ListaService --> AnimePanel: true (agregado)
+deactivate ListaService
+
+AnimePanel -> Usuario: JOptionPane.showMessageDialog(\n  "Anime agregado a la lista")
+
+deactivate AnimePanel
+
+== Flujo Alternativo: Anime ya existe en lista ==
+
+AnimePanel -> ListaService: agregarAnimeALista(...)
+activate ListaService
+ListaService -> ListaService: lista.agregarAnime(anime)
+
+note right of ListaService
+  La lista verifica
+  si ya contiene el anime
+end note
+
+ListaService --> AnimePanel: false (ya existía)
+deactivate ListaService
+AnimePanel -> Usuario: "El anime ya está en esa lista"
+
+@enduml
+
+
+@startuml Arquitectura_Capas
+title Arquitectura por Capas del Sistema
+skinparam componentStyle uml2
+
+package "Capa de Presentación (UI)" {
+  [MainFrame]
+  [AnimePanel]
+  [ListasPanel]
+  [RecomendacionesPanel]
+  [EstadisticasPanel]
+}
+
+package "Capa de Servicios (Lógica de Negocio)" {
+  [AnimeService]
+  [ListaPersonalizadaService]
+  [RecomendacionService]
+  [EstadisticasService]
+}
+
+package "Capa de Repositorios (Persistencia)" {
+  interface "AnimeRepository" as IAnimeRepo
+  interface "ListaPersonalizadaRepository" as IListaRepo
+  [FileAnimeRepository]
+  [FileListaPersonalizadaRepository]
+}
+
+package "Capa de Dominio (Modelo)" {
+  [AnimeBase]
+  [AnimeSerie]
+  [AnimePelicula]
+  [ListaPersonalizada]
+}
+
+package "Utilidades" {
+  [CriterioOrdenamiento]
+  [CriterioRecomendacion]
+  [FiltroAnime]
+}
+
+' Relaciones UI -> Services
+[MainFrame] --> [AnimeService]
+[MainFrame] --> [ListaPersonalizadaService]
+[MainFrame] --> [RecomendacionService]
+[MainFrame] --> [EstadisticasService]
+
+' Relaciones Services -> Repositories (Interfaces)
+[AnimeService] --> IAnimeRepo
+[ListaPersonalizadaService] --> IAnimeRepo
+[ListaPersonalizadaService] --> IListaRepo
+[RecomendacionService] --> IAnimeRepo
+[EstadisticasService] --> IAnimeRepo
+
+' Implementaciones
+[FileAnimeRepository] ..|> IAnimeRepo
+[FileListaPersonalizadaRepository] ..|> IListaRepo
+
+' Servicios usan utilidades
+[AnimeService] --> [CriterioOrdenamiento]
+[AnimeService] --> [FiltroAnime]
+[RecomendacionService] --> [CriterioRecomendacion]
+
+' Herencia en modelo
+[AnimeSerie] --|> [AnimeBase]
+[AnimePelicula] --|> [AnimeBase]
+
+' Agregación
+[ListaPersonalizada] o-- [AnimeBase]
+
+note right of IAnimeRepo
+  SOLID DIP:
+  Los servicios dependen
+  de abstracciones (interfaces),
+  no de implementaciones concretas
+end note
+
+note left of [AnimeService]
+  GRASP Controller:
+  Coordina los casos de uso
+  de la aplicación
+end note
+
+note bottom of [FileAnimeRepository]
+  GRASP Pure Fabrication:
+  Clase técnica que no representa
+  un concepto del dominio
+end note
+
+@enduml
+

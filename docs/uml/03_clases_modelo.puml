@@ -1,0 +1,64 @@
+@startuml
+title Diagrama de Clases - Modelo
+skinparam monochrome true
+
+interface Calificable {
+  +getCalificacion(): int
+  +setCalificacion(int): void
+  +tieneCalificacion(): boolean
+}
+
+abstract class AnimeBase {
+  -titulo: String
+  -anioLanzamiento: int
+  -estudio: String
+  -estado: Estado
+  -calificacionUsuario: int
+  -generos: Set<Genero>
+  +getTipo(): TipoAnime
+  +getDuracion(): int
+  +perteneceAGenero(Genero): boolean
+}
+
+class AnimeSerie {
+  -cantidadCapitulos: int
+  -enEmision: boolean
+}
+
+class AnimePelicula {
+  -duracionMinutos: int
+  -director: String
+}
+
+class ListaPersonalizada {
+  -nombre: String
+  -descripcion: String
+  -animes: List<AnimeBase>
+  +agregarAnime(AnimeBase): boolean
+  +removerAnime(AnimeBase): boolean
+}
+
+enum Estado {
+  POR_VER
+  VIENDO
+  FINALIZADO
+  ABANDONADO
+}
+
+enum Genero {
+  SHONEN
+  SHOJO
+  SEINEN
+  JOSEI
+  MECHA
+  ISEKAI
+  SLICE_OF_LIFE
+}
+
+AnimeBase ..|> Calificable
+AnimeSerie --|> AnimeBase
+AnimePelicula --|> AnimeBase
+AnimeBase --> Estado
+AnimeBase --> "*" Genero
+ListaPersonalizada o-- "*" AnimeBase
+@enduml

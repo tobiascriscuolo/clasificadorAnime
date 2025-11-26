@@ -1,0 +1,46 @@
+@startuml
+title Diagrama de Clases - Servicios
+skinparam monochrome true
+
+interface AnimeRepository {
+  +save(AnimeBase): void
+  +findByTitulo(String): Optional
+  +findAll(): List
+  +deleteByTitulo(String): boolean
+  +existsByTitulo(String): boolean
+}
+
+class FileAnimeRepository {
+  -filePath: String
+  -cache: List<AnimeBase>
+  +save(AnimeBase): void
+  +findAll(): List
+}
+
+class AnimeService {
+  -animeRepository: AnimeRepository
+  +registrarSerie(...): AnimeSerie
+  +registrarPelicula(...): AnimePelicula
+  +actualizarAnime(...): void
+  +eliminarAnime(String): boolean
+  +buscarPorTitulo(String): List
+  +filtrarPorGenero(Genero): List
+}
+
+class EstadisticasService {
+  -animeRepository: AnimeRepository
+  +getPromedioGlobal(): double
+  +getPromedioPorGenero(Genero): double
+  +getCantidadPorEstado(): Map
+  +getTop3Generos(): List
+}
+
+FileAnimeRepository ..|> AnimeRepository
+AnimeService --> AnimeRepository
+EstadisticasService --> AnimeRepository
+
+note bottom of AnimeService
+  GRASP Controller:
+  Coordina casos de uso
+end note
+@enduml

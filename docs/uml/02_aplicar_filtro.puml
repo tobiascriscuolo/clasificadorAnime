@@ -1,0 +1,28 @@
+@startuml
+title Aplicar Filtro y Mostrar Resultados
+skinparam monochrome true
+
+actor Usuario
+participant "AnimePanel" as Panel
+participant "FiltroAnime" as Filtro
+participant "AnimeService" as Service
+
+Usuario -> Panel: Selecciona genero "Shonen"
+Usuario -> Panel: Calificacion minima: 4
+Usuario -> Panel: Clic "Buscar"
+
+Panel -> Filtro: new FiltroAnime()
+Panel -> Filtro: porGenero(SHONEN)
+Panel -> Filtro: porCalificacionMinima(4)
+Panel -> Filtro: build()
+Filtro --> Panel: Predicate
+
+Panel -> Service: busquedaAvanzada(filtro)
+activate Service
+Service -> Service: findAll().filter(predicate)
+Service --> Panel: List<AnimeBase>
+deactivate Service
+
+Panel -> Panel: actualizar tabla
+Panel --> Usuario: Muestra resultados filtrados
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+title Arquitectura por Capas
+skinparam monochrome true
+
+package "UI (Presentacion)" {
+  [MainFrame]
+  [AnimePanel]
+  [ListasPanel]
+}
+
+package "Services (Logica)" {
+  [AnimeService]
+  [ListaService]
+  [RecomendacionService]
+}
+
+package "Repository (Persistencia)" {
+  interface IAnimeRepository
+  [FileAnimeRepository]
+}
+
+package "Model (Dominio)" {
+  [AnimeBase]
+  [ListaPersonalizada]
+}
+
+[MainFrame] --> [AnimeService]
+[AnimeService] --> IAnimeRepository
+[FileAnimeRepository] ..|> IAnimeRepository
+
+note right of IAnimeRepository
+  SOLID - DIP:
+  Services dependen
+  de interfaces
+end note
+@enduml
