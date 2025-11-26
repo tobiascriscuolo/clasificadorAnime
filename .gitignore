@@ -1,0 +1,15 @@
+# Archivos compilados
+out/
+
+# Datos de la app
+data/*.dat
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.cursor/
+
+# Sistema
+.DS_Store
+Thumbs.db
