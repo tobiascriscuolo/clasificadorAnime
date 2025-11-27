@@ -1,0 +1,20 @@
+# ACTUALIZACIONES DEL PROYECTO
+# Sistema de Clasificación de Animé
+# ================================
+
+Compatibilidad Java 8: Se modificó el código para ser compatible con Java 8, cambiando Text Blocks por concatenación de strings y Pattern Matching instanceof por casting tradicional.
+
+Acceso directo: Se creó ClasificadorAnime.bat para ejecutar la aplicación fácilmente con doble clic, incluyendo compilación automática si es necesario.
+
+Tema Wisteria: Se implementó una paleta de colores armónica con violetas tipo wisteria y grises claros, reemplazando el tema oscuro original.
+
+Bordes redondeados: Se agregaron bordes suavemente redondeados a campos de texto, botones, ComboBox, tablas y otros componentes para un look más moderno.
+
+Fuente Gill Sans: Se cambió la tipografía a Gill Sans MT (con fallback a Segoe UI) para un aspecto más elegante y legible.
+
+Pestañas personalizadas: Se creó un UI personalizado para las pestañas (RoundedTabbedPaneUI) con esquinas suavemente redondeadas en lugar de diagonales, sin líneas punteadas de foco.
+
+Alineación de pestañas: Se corrigió la alineación de las pestañas para que no se desplacen al seleccionarlas, manteniendo el mismo tamaño de fuente.
+
+Pestañas flotantes: Las pestañas no seleccionadas ahora aparecen "despegadas" del contenido, mientras que la seleccionada se integra perfectamente sin línea de corte visible.
+

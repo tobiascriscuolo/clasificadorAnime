@@ -355,7 +355,8 @@ public class ListasPanel extends JPanel {
             
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             
-            if (value instanceof ListaPersonalizada lista) {
+            if (value instanceof ListaPersonalizada) {
+                ListaPersonalizada lista = (ListaPersonalizada) value;
                 setText(String.format("📋 %s (%d)", lista.getNombre(), lista.getCantidadAnimes()));
                 setToolTipText(lista.getDescripcion());
             }
@@ -387,13 +388,13 @@ public class ListasPanel extends JPanel {
         @Override
         public Object getValueAt(int row, int col) {
             AnimeBase a = animes.get(row);
-            return switch (col) {
-                case 0 -> a.getTitulo();
-                case 1 -> a.getAnioLanzamiento();
-                case 2 -> a.getEstado().getDescripcion();
-                case 3 -> a.tieneCalificacion() ? a.getCalificacion() : "-";
-                default -> "";
-            };
+            switch (col) {
+                case 0: return a.getTitulo();
+                case 1: return a.getAnioLanzamiento();
+                case 2: return a.getEstado().getDescripcion();
+                case 3: return a.tieneCalificacion() ? a.getCalificacion() : "-";
+                default: return "";
+            }
         }
     }
 }

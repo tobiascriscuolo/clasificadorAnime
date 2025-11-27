@@ -167,24 +167,24 @@ public class RecomendacionesPanel extends JPanel {
             String descripcion;
             
             switch (tipo) {
-                case 0 -> { // Top Global
+                case 0: // Top Global
                     resultados = recomendacionService.getTopGlobal(cantidad);
                     descripcion = "Top " + cantidad + " anime mejor calificados del catálogo";
-                }
-                case 1 -> { // Top por Género
+                    break;
+                case 1: // Top por Género
                     Genero genero = (Genero) cmbGenero.getSelectedItem();
                     resultados = recomendacionService.getTopPorGenero(genero, cantidad);
                     descripcion = "Top " + cantidad + " anime de género " + genero.getDescripcion();
-                }
-                case 2 -> { // Top por Estado
+                    break;
+                case 2: // Top por Estado
                     Estado estado = (Estado) cmbEstado.getSelectedItem();
                     resultados = recomendacionService.getTopPorEstado(estado, cantidad);
                     descripcion = "Top " + cantidad + " anime con estado " + estado.getDescripcion();
-                }
-                default -> {
+                    break;
+                default:
                     resultados = new ArrayList<>();
                     descripcion = "";
-                }
+                    break;
             }
             
             tableModel.setAnimes(resultados);
@@ -231,15 +231,23 @@ public class RecomendacionesPanel extends JPanel {
         @Override
         public Object getValueAt(int row, int col) {
             AnimeBase a = animes.get(row);
-            return switch (col) {
-                case 0 -> row + 1; // Posición
-                case 1 -> a.getTitulo();
-                case 2 -> a.getAnioLanzamiento();
-                case 3 -> formatearGeneros(a.getGeneros());
-                case 4 -> a.getEstado().getDescripcion();
-                case 5 -> "★".repeat(a.getCalificacion());
-                default -> "";
-            };
+            switch (col) {
+                case 0: return row + 1; // Posición
+                case 1: return a.getTitulo();
+                case 2: return a.getAnioLanzamiento();
+                case 3: return formatearGeneros(a.getGeneros());
+                case 4: return a.getEstado().getDescripcion();
+                case 5: return repetirCaracter('★', a.getCalificacion());
+                default: return "";
+            }
+        }
+        
+        private String repetirCaracter(char c, int veces) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < veces; i++) {
+                sb.append(c);
+            }
+            return sb.toString();
         }
         
         private String formatearGeneros(Set<Genero> generos) {

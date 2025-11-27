@@ -244,12 +244,14 @@ public class AnimePanel extends JPanel {
             return;
         }
         
-        if (anime instanceof AnimeSerie serie) {
+        if (anime instanceof AnimeSerie) {
+            AnimeSerie serie = (AnimeSerie) anime;
             AnimeSerieDialog dialog = new AnimeSerieDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this), animeService, serie);
             dialog.setVisible(true);
             if (dialog.isConfirmado()) refrescar();
-        } else if (anime instanceof AnimePelicula pelicula) {
+        } else if (anime instanceof AnimePelicula) {
+            AnimePelicula pelicula = (AnimePelicula) anime;
             AnimePeliculaDialog dialog = new AnimePeliculaDialog(
                 (Frame) SwingUtilities.getWindowAncestor(this), animeService, pelicula);
             dialog.setVisible(true);
@@ -425,15 +427,15 @@ public class AnimePanel extends JPanel {
     
     private CriterioOrdenamiento obtenerCriterioOrdenamiento() {
         int index = cmbOrden.getSelectedIndex();
-        return switch (index) {
-            case 0 -> new OrdenamientoPorTitulo(true);
-            case 1 -> new OrdenamientoPorTitulo(false);
-            case 2 -> new OrdenamientoPorCalificacion(true);
-            case 3 -> new OrdenamientoPorCalificacion(false);
-            case 4 -> new OrdenamientoPorAnio(true);
-            case 5 -> new OrdenamientoPorAnio(false);
-            default -> new OrdenamientoPorTitulo(true);
-        };
+        switch (index) {
+            case 0: return new OrdenamientoPorTitulo(true);
+            case 1: return new OrdenamientoPorTitulo(false);
+            case 2: return new OrdenamientoPorCalificacion(true);
+            case 3: return new OrdenamientoPorCalificacion(false);
+            case 4: return new OrdenamientoPorAnio(true);
+            case 5: return new OrdenamientoPorAnio(false);
+            default: return new OrdenamientoPorTitulo(true);
+        }
     }
     
     private void limpiarFiltros() {
@@ -494,17 +496,17 @@ public class AnimePanel extends JPanel {
         @Override
         public Object getValueAt(int row, int col) {
             AnimeBase anime = animes.get(row);
-            return switch (col) {
-                case 0 -> anime.getTipo().getDescripcion();
-                case 1 -> anime.getTitulo();
-                case 2 -> anime.getAnioLanzamiento();
-                case 3 -> anime.getEstudio();
-                case 4 -> anime.getDescripcionDuracion();
-                case 5 -> formatearGeneros(anime.getGeneros());
-                case 6 -> anime.getEstado().getDescripcion();
-                case 7 -> anime.tieneCalificacion() ? anime.getCalificacion() : "-";
-                default -> "";
-            };
+            switch (col) {
+                case 0: return anime.getTipo().getDescripcion();
+                case 1: return anime.getTitulo();
+                case 2: return anime.getAnioLanzamiento();
+                case 3: return anime.getEstudio();
+                case 4: return anime.getDescripcionDuracion();
+                case 5: return formatearGeneros(anime.getGeneros());
+                case 6: return anime.getEstado().getDescripcion();
+                case 7: return anime.tieneCalificacion() ? anime.getCalificacion() : "-";
+                default: return "";
+            }
         }
         
         private String formatearGeneros(Set<Genero> generos) {

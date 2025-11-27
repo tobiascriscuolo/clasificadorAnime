@@ -1,0 +1,160 @@
+# UTILIDADES DE LA APLICACIÓN
+# Sistema de Clasificación de Animé
+# ==================================
+
+Este archivo lista todas las clases de utilidad que se usan en la aplicación,
+organizadas por categoría.
+
+================================================================================
+                          INTERFACES DE ESTRATEGIA
+================================================================================
+
+CriterioOrdenamiento (util/CriterioOrdenamiento.java):
+    Interfaz funcional que define un criterio de ordenamiento para anime.
+    Extiende Comparator<AnimeBase> para permitir ordenar listas de anime.
+    Patrón: Strategy + Open/Closed Principle.
+
+CriterioRecomendacion (util/CriterioRecomendacion.java):
+    Interfaz que define una estrategia de recomendación de anime.
+    Métodos: recomendar(), getNombre(), getDescripcion().
+    Patrón: Strategy Pattern.
+
+================================================================================
+                       CRITERIOS DE ORDENAMIENTO
+================================================================================
+
+OrdenamientoPorTitulo (util/OrdenamientoPorTitulo.java):
+    Ordena alfabéticamente por título del anime.
+    Soporta orden ascendente (A-Z) o descendente (Z-A).
+    Comparación case-insensitive.
+
+OrdenamientoPorCalificacion (util/OrdenamientoPorCalificacion.java):
+    Ordena por calificación del usuario (1-5 estrellas).
+    Los anime sin calificar van al final de la lista.
+    Soporta orden descendente (mejores primero) o ascendente.
+
+OrdenamientoPorAnio (util/OrdenamientoPorAnio.java):
+    Ordena por año de lanzamiento del anime.
+    Soporta orden descendente (recientes primero) o ascendente (antiguos primero).
+
+================================================================================
+                      CRITERIOS DE RECOMENDACIÓN
+================================================================================
+
+RecomendacionTopGlobal (util/RecomendacionTopGlobal.java):
+    Devuelve los N anime mejor calificados de todo el catálogo.
+    Solo considera anime que tienen calificación.
+    Ordenado de mayor a menor calificación.
+
+RecomendacionTopPorGenero (util/RecomendacionTopPorGenero.java):
+    Devuelve los N anime mejor calificados de un género específico.
+    Requiere especificar el género al crear la instancia.
+    Filtra por género y luego ordena por calificación.
+
+RecomendacionPorEstado (util/RecomendacionPorEstado.java):
+    Devuelve los N anime mejor calificados de un estado específico.
+    Estados: POR_VER, VIENDO, FINALIZADO, ABANDONADO.
+    Útil para encontrar los mejores anime finalizados, por ver, etc.
+
+================================================================================
+                              FILTRADO
+================================================================================
+
+FiltroAnime (util/FiltroAnime.java):
+    Builder para construir filtros combinados de anime.
+    Permite encadenar múltiples criterios de filtrado.
+    
+    Métodos de filtrado disponibles:
+    - porTitulo(String): Búsqueda parcial, case-insensitive
+    - porRangoAnios(Integer desde, Integer hasta): Rango de años
+    - porGenero(Genero): Filtro por género específico
+    - porGeneros(Set<Genero>): Filtro por varios géneros (OR)
+    - porEstado(Estado): Filtro por estado
+    - porCalificacionMinima(Integer): Mínimo de estrellas
+    - soloCalificados(): Solo anime con calificación
+    - porEstudio(String): Búsqueda por estudio de animación
+    - build(): Retorna el Predicate<AnimeBase> construido
+    - test(AnimeBase): Evalúa si un anime cumple el filtro
+
+    Patrón: Builder Pattern.
+
+================================================================================
+                         ENUMERACIONES (MODEL)
+================================================================================
+
+Estado (model/Estado.java):
+    POR_VER: Anime pendiente de ver
+    VIENDO: Anime en progreso
+    FINALIZADO: Anime completado
+    ABANDONADO: Anime dejado sin terminar
+
+Genero (model/Genero.java):
+    SHONEN, SHOJO, SEINEN, JOSEI, KODOMO,
+    MECHA, ISEKAI, SLICE_OF_LIFE, ROMANCE, COMEDIA,
+    ACCION, AVENTURA, FANTASIA, CIENCIA_FICCION, HORROR,
+    MISTERIO, DRAMA, DEPORTES, MUSICAL, OTRO
+
+TipoAnime (model/TipoAnime.java):
+    SERIE: Anime en formato de serie (episodios)
+    PELICULA: Anime en formato película
+
+================================================================================
+                           EXCEPCIONES
+================================================================================
+
+AnimeException (exception/AnimeException.java):
+    Clase base abstracta para todas las excepciones de la aplicación.
+
+AnimeYaExistenteException (exception/AnimeYaExistenteException.java):
+    Se lanza cuando se intenta agregar un anime con título duplicado.
+
+AnimeNoEncontradoException (exception/AnimeNoEncontradoException.java):
+    Se lanza cuando no se encuentra un anime por su título.
+
+ListaNoEncontradaException (exception/ListaNoEncontradaException.java):
+    Se lanza cuando no se encuentra una lista personalizada.
+
+ValidacionException (exception/ValidacionException.java):
+    Se lanza cuando los datos no pasan las validaciones.
+
+PersistenciaException (exception/PersistenciaException.java):
+    Se lanza cuando hay errores de lectura/escritura de archivos.
+
+================================================================================
+                              SERVICIOS
+================================================================================
+
+AnimeService (service/AnimeService.java):
+    Servicio principal para gestión de anime.
+    CRUD de anime, búsqueda, filtrado y ordenamiento.
+
+ListaPersonalizadaService (service/ListaPersonalizadaService.java):
+    Gestión de listas personalizadas de anime.
+    Crear, modificar, eliminar listas y agregar/quitar anime.
+
+RecomendacionService (service/RecomendacionService.java):
+    Servicio de recomendaciones usando las estrategias.
+    getTopGlobal(), getTopPorGenero(), getTopPorEstado().
+
+EstadisticasService (service/EstadisticasService.java):
+    Cálculo de estadísticas del catálogo.
+    Promedios, conteos, géneros más frecuentes.
+
+================================================================================
+                            REPOSITORIOS
+================================================================================
+
+AnimeRepository (repository/AnimeRepository.java):
+    Interfaz para persistencia de anime.
+
+FileAnimeRepository (repository/FileAnimeRepository.java):
+    Implementación que guarda anime en archivo binario (animes.dat).
+
+ListaPersonalizadaRepository (repository/ListaPersonalizadaRepository.java):
+    Interfaz para persistencia de listas.
+
+FileListaPersonalizadaRepository (repository/FileListaPersonalizadaRepository.java):
+    Implementación que guarda listas en archivo binario (listas.dat).
+
+================================================================================
+

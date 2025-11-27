@@ -200,7 +200,8 @@ public class AnimePeliculaDialog extends JDialog {
                 
                 // Actualizar campos específicos de película
                 AnimeBase actualizado = animeService.buscarPorTituloExacto(titulo);
-                if (actualizado instanceof AnimePelicula p) {
+                if (actualizado instanceof AnimePelicula) {
+                    AnimePelicula p = (AnimePelicula) actualizado;
                     p.setDuracionMinutos(duracion);
                     p.setDirector(director);
                 }

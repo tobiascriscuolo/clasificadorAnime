@@ -1,0 +1,189 @@
+# LIBRERÍAS DE JAVA UTILIZADAS
+# Sistema de Clasificación de Animé
+# ==================================
+
+================================================================================
+                              JAVA.AWT (Interfaz Gráfica)
+================================================================================
+
+java.awt.*
+    Paquete base para gráficos y componentes de interfaz.
+    Incluye: Color, Font, Dimension, Graphics, Graphics2D, BorderLayout, etc.
+
+java.awt.event.*
+    Manejo de eventos de usuario.
+    Incluye: ActionListener, MouseListener, WindowAdapter, WindowEvent, etc.
+
+================================================================================
+                              JAVAX.SWING (Componentes UI)
+================================================================================
+
+javax.swing.*
+    Componentes gráficos de interfaz de usuario.
+    Incluye:
+    - JFrame: Ventana principal
+    - JPanel: Contenedor de componentes
+    - JButton: Botones
+    - JLabel: Etiquetas de texto
+    - JTextField: Campos de texto
+    - JTextArea: Áreas de texto
+    - JComboBox: Listas desplegables
+    - JList: Listas
+    - JTable: Tablas
+    - JTabbedPane: Pestañas
+    - JScrollPane: Paneles con scroll
+    - JOptionPane: Diálogos de mensaje
+    - JDialog: Ventanas de diálogo
+    - JMenuBar, JMenu, JMenuItem: Menús
+    - JSpinner: Selectores numéricos
+    - JCheckBox: Casillas de verificación
+    - BorderFactory: Creador de bordes
+    - UIManager: Configuración de Look & Feel
+    - SwingUtilities: Utilidades de Swing
+
+javax.swing.table.*
+    Componentes para tablas.
+    Incluye:
+    - AbstractTableModel: Modelo base para tablas
+    - DefaultTableModel: Modelo de tabla por defecto
+    - TableCellRenderer: Renderizador de celdas
+
+javax.swing.border.Border
+    Interfaz para bordes personalizados.
+
+javax.swing.plaf.basic.BasicTabbedPaneUI
+    UI base para personalizar pestañas.
+
+================================================================================
+                              JAVA.UTIL (Colecciones y Utilidades)
+================================================================================
+
+java.util.List
+    Interfaz para listas ordenadas.
+    Implementaciones usadas: ArrayList
+
+java.util.ArrayList
+    Lista dinámica basada en array.
+    Permite agregar, eliminar y acceder elementos por índice.
+
+java.util.Set
+    Interfaz para conjuntos (sin duplicados).
+    Implementaciones usadas: HashSet
+
+java.util.HashSet
+    Conjunto basado en tabla hash.
+    No permite elementos duplicados.
+
+java.util.Map
+    Interfaz para mapas clave-valor.
+    Implementaciones usadas: HashMap
+
+java.util.HashMap
+    Mapa basado en tabla hash.
+    Acceso rápido por clave.
+
+java.util.Collections
+    Utilidades para colecciones.
+    Métodos: sort(), unmodifiableList(), unmodifiableSet(), etc.
+
+java.util.Objects
+    Utilidades para objetos.
+    Métodos: equals(), hash(), requireNonNull(), etc.
+
+java.util.Optional
+    Contenedor que puede o no tener un valor.
+    Evita NullPointerException, hace el código más expresivo.
+
+java.util.Comparator
+    Interfaz para definir ordenamiento personalizado.
+    Métodos: compare(), comparing(), reversed(), etc.
+
+================================================================================
+                         JAVA.UTIL.FUNCTION (Programación Funcional)
+================================================================================
+
+java.util.function.Predicate
+    Interfaz funcional para condiciones booleanas.
+    Método: test(T t) -> boolean
+    Usado en FiltroAnime para combinar filtros.
+
+================================================================================
+                           JAVA.UTIL.STREAM (Streams)
+================================================================================
+
+java.util.stream.Collectors
+    Utilidades para recolectar resultados de streams.
+    Métodos usados:
+    - toList(): Convierte stream a List
+    - toSet(): Convierte stream a Set
+    - groupingBy(): Agrupa elementos
+    - counting(): Cuenta elementos
+    - averagingDouble(): Calcula promedio
+
+Streams (via Collection.stream()):
+    Procesamiento de colecciones estilo funcional.
+    Métodos usados:
+    - filter(): Filtra elementos
+    - map(): Transforma elementos
+    - sorted(): Ordena elementos
+    - limit(): Limita cantidad
+    - collect(): Recolecta resultados
+    - reduce(): Reduce a un valor
+    - findFirst(): Encuentra primero
+    - count(): Cuenta elementos
+
+================================================================================
+                              JAVA.IO (Entrada/Salida)
+================================================================================
+
+java.io.Serializable
+    Interfaz que permite serializar objetos a bytes.
+    Implementada por AnimeBase, ListaPersonalizada.
+
+java.io.File
+    Representa archivos y directorios.
+
+java.io.FileInputStream / java.io.FileOutputStream
+    Streams para leer/escribir archivos binarios.
+
+java.io.ObjectInputStream / java.io.ObjectOutputStream
+    Streams para serializar/deserializar objetos Java.
+    Usados para guardar datos en animes.dat y listas.dat.
+
+java.io.IOException
+    Excepción para errores de entrada/salida.
+
+================================================================================
+                         RESUMEN DE USO POR CAPA
+================================================================================
+
+MODELO (model/):
+    - java.io.Serializable (persistencia)
+    - java.util.Set, HashSet (géneros)
+    - java.util.List, ArrayList (listas)
+    - java.util.Collections (inmutabilidad)
+    - java.util.Objects (equals/hashCode)
+
+REPOSITORIO (repository/):
+    - java.io.* (lectura/escritura archivos)
+    - java.util.List, ArrayList, Optional
+
+SERVICIO (service/):
+    - java.util.* (colecciones)
+    - java.util.stream.Collectors (procesamiento)
+    - java.util.function.Predicate (filtros)
+
+UTILIDADES (util/):
+    - java.util.Comparator (ordenamiento)
+    - java.util.List (recomendaciones)
+    - java.util.stream.Collectors (streams)
+    - java.util.function.Predicate (filtros)
+
+INTERFAZ (ui/):
+    - javax.swing.* (componentes)
+    - javax.swing.table.* (tablas)
+    - java.awt.* (gráficos, colores, fuentes)
+    - java.awt.event.* (eventos)
+
+================================================================================
+

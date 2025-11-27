@@ -200,7 +200,8 @@ public class AnimeSerieDialog extends JDialog {
                 
                 // Actualizar campos específicos de serie
                 AnimeBase actualizado = animeService.buscarPorTituloExacto(titulo);
-                if (actualizado instanceof AnimeSerie s) {
+                if (actualizado instanceof AnimeSerie) {
+                    AnimeSerie s = (AnimeSerie) actualizado;
                     s.setCantidadCapitulos(capitulos);
                     s.setEnEmision(enEmision);
                 }
