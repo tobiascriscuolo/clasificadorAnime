@@ -1,0 +1,1257 @@
+================================================================================
+                    INFORME COMPLETO DEL PROYECTO
+              SISTEMA DE CLASIFICACIÓN DE ANIMÉ - POO
+================================================================================
+
+Este documento explica TODO lo que se usó en el proyecto, cómo funciona y por qué
+se tomó cada decisión. Está pensado para que puedas defender el proyecto en un
+examen oral sin tener que estudiar de otras fuentes.
+
+================================================================================
+                         ÍNDICE
+================================================================================
+
+1. CONCEPTOS BÁSICOS DE POO USADOS
+2. ARQUITECTURA DEL PROYECTO (MVC POR CAPAS)
+3. PRINCIPIOS SOLID - QUÉ SON Y DÓNDE SE APLICAN
+4. PATRONES GRASP - QUÉ SON Y DÓNDE SE APLICAN
+5. PATRONES DE DISEÑO (GoF) USADOS
+6. EXPLICACIÓN DE CADA CLASE
+7. RELACIONES ENTRE CLASES
+8. EXCEPCIONES PERSONALIZADAS
+9. PERSISTENCIA DE DATOS
+10. INTERFAZ GRÁFICA (SWING)
+11. PREGUNTAS FRECUENTES DE EXAMEN
+
+================================================================================
+                  1. CONCEPTOS BÁSICOS DE POO USADOS
+================================================================================
+
+CLASE
+-----
+Una clase es un "molde" para crear objetos. Define atributos (datos) y métodos
+(comportamientos).
+
+Ejemplo en el proyecto:
+    public class AnimeSerie extends AnimeBase {
+        private int cantidadCapitulos;  // Atributo
+        
+        public int getCantidadCapitulos() {  // Método
+            return cantidadCapitulos;
+        }
+    }
+
+OBJETO
+------
+Un objeto es una instancia de una clase. Es el "producto" creado a partir del molde.
+
+Ejemplo:
+    AnimeSerie naruto = new AnimeSerie("Naruto", 2002, "Pierrot", 220, generos, false);
+    // "naruto" es un OBJETO de la CLASE AnimeSerie
+
+ENCAPSULAMIENTO
+---------------
+Ocultar los datos internos de una clase y acceder a ellos solo mediante métodos.
+Se logra con modificadores de acceso: private, protected, public.
+
+Ejemplo en el proyecto:
+    public abstract class AnimeBase {
+        private String titulo;           // PRIVADO - no se puede acceder directamente
+        
+        public String getTitulo() {      // PÚBLICO - forma controlada de acceder
+            return titulo;
+        }
+        
+        public void setTitulo(String titulo) {  // PÚBLICO - forma controlada de modificar
+            this.titulo = titulo;
+        }
+    }
+
+¿Por qué se usa?
+- Protege los datos de modificaciones incorrectas
+- Permite validar antes de cambiar un valor
+- Si cambia la implementación interna, el código externo no se rompe
+
+HERENCIA
+--------
+Permite que una clase (hija) herede atributos y métodos de otra clase (padre).
+Se usa la palabra clave "extends".
+
+En el proyecto:
+    AnimeBase (clase padre/abstracta)
+        ↓ extends
+    AnimeSerie (clase hija)
+    AnimePelicula (clase hija)
+
+AnimeSerie y AnimePelicula HEREDAN de AnimeBase:
+- Heredan: titulo, anioLanzamiento, estudio, estado, calificacion, generos
+- Agregan lo propio: AnimeSerie tiene "cantidadCapitulos", AnimePelicula tiene "duracionMinutos"
+
+¿Por qué se usa?
+- Evita duplicar código (DRY - Don't Repeat Yourself)
+- Permite tratar a los hijos como si fueran del tipo padre (polimorfismo)
+
+POLIMORFISMO
+------------
+La capacidad de que objetos de diferentes clases respondan al mismo mensaje
+de manera diferente.
+
+Ejemplo en el proyecto:
+    List<AnimeBase> catalogo = new ArrayList<>();
+    catalogo.add(new AnimeSerie(...));    // Es un AnimeBase
+    catalogo.add(new AnimePelicula(...)); // También es un AnimeBase
+    
+    for (AnimeBase anime : catalogo) {
+        System.out.println(anime.getDescripcionDuracion());
+        // AnimeSerie imprime "220 capítulos"
+        // AnimePelicula imprime "120 minutos"
+    }
+
+El método getDescripcionDuracion() es ABSTRACTO en AnimeBase y cada subclase
+lo implementa a su manera. Esto es polimorfismo.
+
+ABSTRACCIÓN
+-----------
+Ocultar la complejidad y mostrar solo lo esencial.
+
+En el proyecto:
+- La interfaz AnimeRepository define QUÉ operaciones se pueden hacer (save, findAll, delete)
+- La clase FileAnimeRepository define CÓMO se hacen (guardando en archivos)
+- El servicio solo conoce la interfaz, no le importa cómo se guardan los datos
+
+CLASE ABSTRACTA
+---------------
+Una clase que no se puede instanciar directamente. Sirve como base para otras clases.
+Puede tener métodos abstractos (sin implementación) y métodos concretos (con implementación).
+
+Ejemplo:
+    public abstract class AnimeBase {  // No puedo hacer: new AnimeBase()
+        
+        // Método ABSTRACTO - las subclases DEBEN implementarlo
+        public abstract TipoAnime getTipo();
+        
+        // Método CONCRETO - las subclases lo heredan tal cual
+        public boolean perteneceAGenero(Genero genero) {
+            return generos.contains(genero);
+        }
+    }
+
+INTERFAZ
+--------
+Un "contrato" que define qué métodos debe tener una clase. No tiene implementación.
+Se usa la palabra clave "interface" y se implementa con "implements".
+
+Ejemplo en el proyecto:
+    public interface Calificable {
+        int getCalificacion();
+        void setCalificacion(int calificacion);
+        boolean tieneCalificacion();
+    }
+    
+    public abstract class AnimeBase implements Calificable {
+        // DEBE implementar los 3 métodos de Calificable
+    }
+
+¿Para qué sirve?
+- Define un contrato que varias clases pueden cumplir
+- Permite que clases no relacionadas compartan comportamiento
+- Fundamental para el principio DIP de SOLID
+
+
+================================================================================
+              2. ARQUITECTURA DEL PROYECTO (MVC POR CAPAS)
+================================================================================
+
+El proyecto está organizado en CAPAS, donde cada capa tiene una responsabilidad
+específica y solo se comunica con las capas adyacentes.
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │                         UI (Vista)                          │
+    │   MainFrame, AnimePanel, ListasPanel, Diálogos              │
+    │   - Muestra datos al usuario                                │
+    │   - Captura eventos (clicks, texto ingresado)               │
+    │   - NO tiene lógica de negocio                              │
+    └─────────────────────────┬───────────────────────────────────┘
+                              │ usa
+                              ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                    SERVICE (Controlador)                    │
+    │   AnimeService, ListaPersonalizadaService,                  │
+    │   RecomendacionService, EstadisticasService                 │
+    │   - Contiene la LÓGICA DE NEGOCIO                           │
+    │   - Valida datos                                            │
+    │   - Coordina operaciones                                    │
+    └─────────────────────────┬───────────────────────────────────┘
+                              │ usa
+                              ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                   REPOSITORY (Persistencia)                 │
+    │   AnimeRepository (interfaz), FileAnimeRepository           │
+    │   - Guarda y recupera datos                                 │
+    │   - Abstrae el mecanismo de almacenamiento                  │
+    └─────────────────────────┬───────────────────────────────────┘
+                              │ usa
+                              ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                       MODEL (Modelo)                        │
+    │   AnimeBase, AnimeSerie, AnimePelicula, ListaPersonalizada  │
+    │   Estado, Genero, TipoAnime                                 │
+    │   - Representa los datos del dominio                        │
+    │   - Es la capa más "pura" - no depende de nada              │
+    └─────────────────────────────────────────────────────────────┘
+
+FLUJO DE UNA OPERACIÓN (ej: crear una serie)
+--------------------------------------------
+1. Usuario hace click en "Nueva Serie" en la UI
+2. La UI abre un diálogo y captura los datos
+3. La UI llama a animeService.registrarSerie(datos...)
+4. El Service VALIDA los datos
+5. El Service VERIFICA que no exista un anime con ese título
+6. El Service CREA el objeto AnimeSerie
+7. El Service llama a repository.save(serie)
+8. El Repository GUARDA en archivo
+9. El Service retorna el objeto creado
+10. La UI muestra mensaje de éxito y refresca la tabla
+
+¿POR QUÉ USAR CAPAS?
+--------------------
+- SEPARACIÓN DE RESPONSABILIDADES: Cada capa hace una sola cosa
+- BAJO ACOPLAMIENTO: Cambiar una capa no afecta a las otras
+- TESTEABLE: Puedo probar cada capa por separado
+- MANTENIBLE: Es fácil encontrar dónde está cada cosa
+- ESCALABLE: Puedo agregar funcionalidades sin romper lo existente
+
+
+================================================================================
+                  3. PRINCIPIOS SOLID - QUÉ SON Y DÓNDE SE APLICAN
+================================================================================
+
+SOLID es un acrónimo de 5 principios de diseño orientado a objetos:
+
+S - SINGLE RESPONSIBILITY PRINCIPLE (SRP)
+-----------------------------------------
+"Una clase debe tener una sola razón para cambiar"
+
+Significa que cada clase debe tener UNA SOLA responsabilidad.
+
+DÓNDE SE APLICA EN EL PROYECTO:
+- AnimeService: Solo coordina operaciones de anime
+- ListaPersonalizadaService: Solo coordina operaciones de listas
+- FileAnimeRepository: Solo guarda/lee anime de archivos
+- AnimePanel: Solo muestra la interfaz del catálogo
+
+EJEMPLO MALO (viola SRP):
+    public class AnimeService {
+        public void registrarAnime() { ... }
+        public void guardarEnArchivo() { ... }  // ¡NO! Esto es del Repository
+        public void mostrarEnPantalla() { ... } // ¡NO! Esto es de la UI
+    }
+
+EJEMPLO BUENO (cumple SRP):
+    public class AnimeService {
+        public AnimeSerie registrarSerie(...) {
+            // Solo lógica de negocio
+            validarDatos();
+            verificarDuplicado();
+            return crearYGuardar();
+        }
+    }
+
+-----------------------------------------
+O - OPEN/CLOSED PRINCIPLE (OCP)
+-----------------------------------------
+"Las clases deben estar abiertas para extensión pero cerradas para modificación"
+
+Significa que puedo agregar funcionalidad SIN modificar el código existente.
+
+DÓNDE SE APLICA EN EL PROYECTO:
+Las estrategias de ordenamiento y recomendación.
+
+Para agregar un nuevo criterio de ordenamiento:
+1. Creo una nueva clase que implemente CriterioOrdenamiento
+2. ¡NO modifico ninguna clase existente!
+
+    // Clase EXISTENTE - no la modifico
+    public class OrdenamientoPorTitulo implements CriterioOrdenamiento { ... }
+    
+    // Clase NUEVA - la agrego sin tocar nada
+    public class OrdenamientoPorEstudio implements CriterioOrdenamiento {
+        public int compare(AnimeBase a1, AnimeBase a2) {
+            return a1.getEstudio().compareTo(a2.getEstudio());
+        }
+    }
+
+El servicio puede usar cualquier criterio sin saber cuál es:
+    public List<AnimeBase> ordenar(List<AnimeBase> animes, CriterioOrdenamiento criterio) {
+        animes.sort(criterio);  // Funciona con CUALQUIER criterio
+        return animes;
+    }
+
+-----------------------------------------
+L - LISKOV SUBSTITUTION PRINCIPLE (LSP)
+-----------------------------------------
+"Las subclases deben poder sustituir a sus clases base sin alterar el comportamiento"
+
+Significa que si uso AnimeBase en algún lugar, debería poder usar AnimeSerie o
+AnimePelicula sin que nada se rompa.
+
+DÓNDE SE APLICA EN EL PROYECTO:
+    List<AnimeBase> catalogo = new ArrayList<>();
+    catalogo.add(new AnimeSerie(...));    // Funciona
+    catalogo.add(new AnimePelicula(...)); // Funciona igual
+    
+    for (AnimeBase anime : catalogo) {
+        System.out.println(anime.getTitulo());  // Funciona para ambos
+        System.out.println(anime.getDuracion()); // Cada uno responde diferente
+    }
+
+AnimeSerie y AnimePelicula son intercambiables donde se espera AnimeBase.
+
+-----------------------------------------
+I - INTERFACE SEGREGATION PRINCIPLE (ISP)
+-----------------------------------------
+"Es mejor tener muchas interfaces pequeñas que una grande"
+
+Significa que las interfaces deben ser específicas y no forzar a implementar
+métodos que no se necesitan.
+
+DÓNDE SE APLICA EN EL PROYECTO:
+    public interface Calificable {
+        int getCalificacion();
+        void setCalificacion(int calificacion);
+        boolean tieneCalificacion();
+    }
+
+Esta interfaz es PEQUEÑA y ESPECÍFICA. Solo tiene lo necesario para calificar.
+
+Si en el futuro quiero que otras cosas sean calificables (ej: estudios de animación),
+solo implementan esta interfaz sin tener que implementar métodos de anime.
+
+EJEMPLO MALO (viola ISP):
+    public interface Anime {
+        String getTitulo();
+        int getCalificacion();
+        void reproducir();           // ¿Y si no todos se pueden reproducir?
+        void descargar();            // ¿Y si no todos se pueden descargar?
+        void compartirEnRedes();     // ¿Y si no quiero redes sociales?
+    }
+
+-----------------------------------------
+D - DEPENDENCY INVERSION PRINCIPLE (DIP)
+-----------------------------------------
+"Depende de abstracciones, no de implementaciones concretas"
+
+Significa que las clases de alto nivel no deben depender de clases de bajo nivel.
+Ambas deben depender de interfaces.
+
+DÓNDE SE APLICA EN EL PROYECTO:
+    public class AnimeService {
+        private final AnimeRepository animeRepository;  // ¡INTERFAZ, no implementación!
+        
+        public AnimeService(AnimeRepository animeRepository) {
+            this.animeRepository = animeRepository;  // Se inyecta la dependencia
+        }
+    }
+
+AnimeService NO conoce FileAnimeRepository. Solo conoce la interfaz AnimeRepository.
+Si mañana quiero guardar en base de datos, creo DatabaseAnimeRepository que implemente
+AnimeRepository, y AnimeService funciona igual sin modificarlo.
+
+EJEMPLO MALO (viola DIP):
+    public class AnimeService {
+        private FileAnimeRepository repo = new FileAnimeRepository();  // ¡MAL!
+        // Dependencia directa de la implementación concreta
+    }
+
+EJEMPLO BUENO (cumple DIP):
+    public class AnimeService {
+        private final AnimeRepository repo;  // Interfaz
+        
+        public AnimeService(AnimeRepository repo) {  // Inyección
+            this.repo = repo;
+        }
+    }
+    
+    // Al crear el servicio:
+    AnimeRepository repo = new FileAnimeRepository();
+    AnimeService service = new AnimeService(repo);
+
+
+================================================================================
+              4. PATRONES GRASP - QUÉ SON Y DÓNDE SE APLICAN
+================================================================================
+
+GRASP = General Responsibility Assignment Software Patterns
+Son guías para asignar responsabilidades a las clases.
+
+-----------------------------------------
+CONTROLLER (Controlador)
+-----------------------------------------
+"¿Quién debe recibir y coordinar una operación del sistema?"
+
+Un controlador es un objeto que recibe los eventos del sistema y los coordina.
+NO es la UI. La UI solo captura eventos y los pasa al controlador.
+
+EN EL PROYECTO:
+Los Services son los controladores.
+
+    // La UI captura el evento
+    btnGuardar.addActionListener(e -> {
+        String titulo = txtTitulo.getText();
+        // La UI NO valida, NO crea objetos, NO guarda
+        // Solo llama al controlador:
+        animeService.registrarSerie(titulo, ...);
+    });
+    
+    // El Service (controlador) coordina todo
+    public class AnimeService {  // <-- CONTROLLER
+        public AnimeSerie registrarSerie(...) {
+            validarTitulo(titulo);           // Coordina validación
+            verificarDuplicado(titulo);      // Coordina verificación
+            AnimeSerie serie = new AnimeSerie(...);  // Crea objeto
+            repository.save(serie);          // Coordina persistencia
+            return serie;
+        }
+    }
+
+-----------------------------------------
+INFORMATION EXPERT (Experto en Información)
+-----------------------------------------
+"¿Quién debe ser responsable de hacer algo?"
+Respuesta: El que tiene la información necesaria para hacerlo.
+
+EN EL PROYECTO:
+AnimeBase tiene métodos que responden preguntas sobre sí mismo.
+
+    public abstract class AnimeBase {
+        private Set<Genero> generos;
+        
+        // El anime CONOCE sus géneros, entonces ÉL responde esta pregunta
+        public boolean perteneceAGenero(Genero genero) {
+            return generos.contains(genero);
+        }
+        
+        // El anime CONOCE su título, entonces ÉL responde
+        public boolean tituloContiene(String texto) {
+            return titulo.toLowerCase().contains(texto.toLowerCase());
+        }
+        
+        // El anime CONOCE su calificación, entonces ÉL responde
+        public boolean cumpleCalificacionMinima(int minima) {
+            return tieneCalificacion() && calificacionUsuario >= minima;
+        }
+    }
+
+NO sería correcto que el Service haga esto:
+    // MAL - viola Information Expert
+    public boolean animePertenece(AnimeBase anime, Genero genero) {
+        return anime.getGeneros().contains(genero);  // El Service no debería hacerlo
+    }
+
+-----------------------------------------
+CREATOR (Creador)
+-----------------------------------------
+"¿Quién debe crear una instancia de una clase?"
+
+Reglas:
+- B crea A si: B contiene A, B registra A, B usa A de cerca, B tiene los datos para crear A
+
+EN EL PROYECTO:
+AnimeService crea instancias de AnimeSerie y AnimePelicula porque:
+- Tiene los datos necesarios (los recibe como parámetros)
+- Es quien los registra en el sistema
+
+    public class AnimeService {  // <-- CREATOR
+        public AnimeSerie registrarSerie(String titulo, int anio, ...) {
+            // El Service CREA el objeto porque tiene todos los datos
+            AnimeSerie serie = new AnimeSerie(titulo, anio, estudio, capitulos, generos, enEmision);
+            repository.save(serie);
+            return serie;
+        }
+    }
+
+-----------------------------------------
+LOW COUPLING (Bajo Acoplamiento)
+-----------------------------------------
+"Las clases deben tener pocas dependencias entre sí"
+
+Acoplamiento = grado de dependencia entre clases.
+Alto acoplamiento = malo (si cambio una clase, se rompen muchas otras)
+Bajo acoplamiento = bueno (las clases son independientes)
+
+EN EL PROYECTO:
+- La UI solo conoce a los Services, no a los Repositories
+- Los Services solo conocen interfaces de Repository, no implementaciones
+- El Model no conoce a nadie
+
+    UI → Service → Repository(interfaz) → Repository(implementación) → Model
+    
+    Si cambio FileAnimeRepository por DatabaseAnimeRepository:
+    - La UI NO cambia
+    - El Service NO cambia
+    - Solo cambia la implementación del Repository
+
+-----------------------------------------
+HIGH COHESION (Alta Cohesión)
+-----------------------------------------
+"Una clase debe hacer cosas relacionadas entre sí"
+
+Cohesión = grado en que los elementos de una clase están relacionados.
+Baja cohesión = malo (la clase hace de todo)
+Alta cohesión = bueno (la clase hace una cosa bien)
+
+EN EL PROYECTO:
+    // ALTA COHESIÓN - todo relacionado con anime
+    public class AnimeService {
+        registrarSerie()
+        registrarPelicula()
+        actualizarAnime()
+        eliminarAnime()
+        buscarPorTitulo()
+        // Todos los métodos son sobre ANIME
+    }
+    
+    // ALTA COHESIÓN - todo relacionado con listas
+    public class ListaPersonalizadaService {
+        crearLista()
+        agregarAnimeALista()
+        removerAnimeDeLista()
+        // Todos los métodos son sobre LISTAS
+    }
+
+EJEMPLO MALO (baja cohesión):
+    public class TodoService {
+        registrarAnime()
+        crearLista()
+        enviarEmail()
+        generarPDF()
+        conectarBaseDatos()
+        // ¡Hace de todo! No tiene un foco claro
+    }
+
+-----------------------------------------
+POLYMORPHISM (Polimorfismo)
+-----------------------------------------
+"Usar polimorfismo para manejar alternativas basadas en tipo"
+
+En vez de usar if/switch para verificar tipos, usar polimorfismo.
+
+EN EL PROYECTO:
+Las estrategias de ordenamiento y recomendación.
+
+    // BIEN - Polimorfismo
+    public interface CriterioOrdenamiento extends Comparator<AnimeBase> {
+        int compare(AnimeBase a1, AnimeBase a2);
+    }
+    
+    public List<AnimeBase> ordenar(List<AnimeBase> animes, CriterioOrdenamiento criterio) {
+        animes.sort(criterio);  // El polimorfismo decide qué hacer
+        return animes;
+    }
+
+    // MAL - Sin polimorfismo (muchos if)
+    public List<AnimeBase> ordenar(List<AnimeBase> animes, String criterio) {
+        if (criterio.equals("titulo")) {
+            // ordenar por título
+        } else if (criterio.equals("anio")) {
+            // ordenar por año
+        } else if (criterio.equals("calificacion")) {
+            // ordenar por calificación
+        }
+        // Cada nuevo criterio = más código aquí
+    }
+
+-----------------------------------------
+PURE FABRICATION (Fabricación Pura)
+-----------------------------------------
+"Crear clases que no representan conceptos del dominio para mejorar el diseño"
+
+A veces necesitamos clases "artificiales" que no existen en el mundo real
+pero mejoran el diseño del software.
+
+EN EL PROYECTO:
+Los Repositories son Pure Fabrication.
+
+    public class FileAnimeRepository implements AnimeRepository {
+        // Esta clase NO representa nada del mundo del anime
+        // Es una "invención" técnica para manejar la persistencia
+    }
+
+En el mundo real no existe un "repositorio de anime". Es un concepto de software
+que mejora la separación de responsabilidades.
+
+-----------------------------------------
+INDIRECTION (Indirección)
+-----------------------------------------
+"Agregar un intermediario para reducir el acoplamiento"
+
+EN EL PROYECTO:
+Los Services son intermediarios entre la UI y los Repositories.
+
+    UI → Service → Repository
+    
+    La UI no conoce al Repository directamente.
+    El Service actúa como intermediario.
+
+-----------------------------------------
+PROTECTED VARIATIONS (Variaciones Protegidas)
+-----------------------------------------
+"Proteger al sistema de las variaciones de elementos inestables"
+
+Se logra con interfaces y abstracciones.
+
+EN EL PROYECTO:
+    public interface AnimeRepository {
+        void save(AnimeBase anime);
+        List<AnimeBase> findAll();
+        // ...
+    }
+
+Si cambio de archivos a base de datos:
+- Creo una nueva implementación de AnimeRepository
+- El resto del sistema NO se entera
+- Las variaciones están "protegidas" detrás de la interfaz
+
+
+================================================================================
+                    5. PATRONES DE DISEÑO (GoF) USADOS
+================================================================================
+
+GoF = Gang of Four (los 4 autores del libro clásico de patrones)
+
+-----------------------------------------
+STRATEGY (Estrategia)
+-----------------------------------------
+Define una familia de algoritmos, los encapsula y los hace intercambiables.
+
+EN EL PROYECTO:
+Criterios de ordenamiento y recomendación.
+
+    // La INTERFAZ define el contrato
+    public interface CriterioOrdenamiento extends Comparator<AnimeBase> {
+        int compare(AnimeBase a1, AnimeBase a2);
+        String getDescripcion();
+    }
+    
+    // Cada ESTRATEGIA implementa el algoritmo diferente
+    public class OrdenamientoPorTitulo implements CriterioOrdenamiento {
+        public int compare(AnimeBase a1, AnimeBase a2) {
+            return a1.getTitulo().compareToIgnoreCase(a2.getTitulo());
+        }
+    }
+    
+    public class OrdenamientoPorCalificacion implements CriterioOrdenamiento {
+        public int compare(AnimeBase a1, AnimeBase a2) {
+            return Integer.compare(a2.getCalificacion(), a1.getCalificacion());
+        }
+    }
+    
+    // El CONTEXTO usa cualquier estrategia
+    public List<AnimeBase> ordenar(List<AnimeBase> animes, CriterioOrdenamiento criterio) {
+        animes.sort(criterio);  // No sabe cuál estrategia es
+        return animes;
+    }
+
+USO:
+    List<AnimeBase> listaOrdenada;
+    
+    // Puedo cambiar la estrategia fácilmente
+    listaOrdenada = service.ordenar(animes, new OrdenamientoPorTitulo());
+    listaOrdenada = service.ordenar(animes, new OrdenamientoPorCalificacion());
+    listaOrdenada = service.ordenar(animes, new OrdenamientoPorAnio());
+
+-----------------------------------------
+BUILDER (Constructor)
+-----------------------------------------
+Permite construir objetos complejos paso a paso.
+
+EN EL PROYECTO:
+FiltroAnime para búsquedas avanzadas.
+
+    FiltroAnime filtro = new FiltroAnime()
+        .porGenero(Genero.SHONEN)
+        .porCalificacionMinima(4)
+        .porEstado(Estado.FINALIZADO);
+    
+    List<AnimeBase> resultados = service.busquedaAvanzada(filtro);
+
+¿Por qué se usa?
+- Permite combinar filtros de forma legible
+- Evita constructores con muchos parámetros
+- Cada filtro es opcional
+- El método cumpleFiltro(anime) evalúa todos los criterios con AND lógico
+
+-----------------------------------------
+TEMPLATE METHOD (Método Plantilla)
+-----------------------------------------
+Define el esqueleto de un algoritmo en una clase base, dejando algunos pasos
+para que los implementen las subclases.
+
+EN EL PROYECTO:
+AnimeBase define métodos abstractos que las subclases implementan.
+
+    public abstract class AnimeBase {
+        // Método ABSTRACTO - cada subclase lo implementa diferente
+        public abstract TipoAnime getTipo();
+        public abstract int getDuracion();
+        public abstract String getDescripcionDuracion();
+    }
+    
+    public class AnimeSerie extends AnimeBase {
+        @Override
+        public TipoAnime getTipo() {
+            return TipoAnime.SERIE;
+        }
+        
+        @Override
+        public String getDescripcionDuracion() {
+            return cantidadCapitulos + " capítulos";
+        }
+    }
+    
+    public class AnimePelicula extends AnimeBase {
+        @Override
+        public TipoAnime getTipo() {
+            return TipoAnime.PELICULA;
+        }
+        
+        @Override
+        public String getDescripcionDuracion() {
+            return duracionMinutos + " minutos";
+        }
+    }
+
+
+================================================================================
+                      6. EXPLICACIÓN DE CADA CLASE
+================================================================================
+
+PAQUETE MODEL (Modelo de Dominio)
+---------------------------------
+
+AnimeBase.java (CLASE ABSTRACTA)
+    - Clase base para todos los tipos de anime
+    - Implementa la interfaz Calificable
+    - Atributos comunes: titulo, anioLanzamiento, estudio, estado, calificacion, generos
+    - Métodos abstractos: getTipo(), getDuracion(), getDescripcionDuracion()
+    - Métodos de consulta: perteneceAGenero(), tituloContiene(), cumpleCalificacionMinima()
+    - equals/hashCode basados en el título (clave única)
+
+AnimeSerie.java
+    - Extiende AnimeBase
+    - Atributos propios: cantidadCapitulos, enEmision
+    - getTipo() retorna TipoAnime.SERIE
+    - getDescripcionDuracion() retorna "X capítulos"
+
+AnimePelicula.java
+    - Extiende AnimeBase
+    - Atributos propios: duracionMinutos, director
+    - getTipo() retorna TipoAnime.PELICULA
+    - getDescripcionDuracion() retorna "X minutos"
+
+ListaPersonalizada.java
+    - Representa una lista de anime creada por el usuario
+    - Atributos: nombre, descripcion, List<AnimeBase>
+    - Permite agregar/quitar anime
+    - Un anime puede estar en múltiples listas (relación N:M)
+
+Calificable.java (INTERFAZ)
+    - Define el contrato para entidades calificables
+    - Métodos: getCalificacion(), setCalificacion(), tieneCalificacion()
+
+Estado.java (ENUM)
+    - POR_VER, VIENDO, FINALIZADO, ABANDONADO
+    - Cada valor tiene una descripción legible
+
+Genero.java (ENUM)
+    - SHONEN, SHOJO, SEINEN, JOSEI, MECHA, ISEKAI, SLICE_OF_LIFE, etc.
+    - Cada valor tiene una descripción legible
+
+TipoAnime.java (ENUM)
+    - SERIE, PELICULA
+    - Distingue el tipo de anime
+
+
+PAQUETE REPOSITORY (Persistencia)
+---------------------------------
+
+AnimeRepository.java (INTERFAZ)
+    - Define operaciones de persistencia para anime
+    - save(), findAll(), findByTitulo(), deleteByTitulo(), existsByTitulo()
+
+FileAnimeRepository.java
+    - Implementa AnimeRepository
+    - Guarda/lee de archivo binario usando serialización Java
+    - Mantiene una caché en memoria para rendimiento
+    - Archivo: data/animes.dat
+
+ListaPersonalizadaRepository.java (INTERFAZ)
+    - Define operaciones de persistencia para listas
+
+FileListaPersonalizadaRepository.java
+    - Implementa ListaPersonalizadaRepository
+    - Archivo: data/listas.dat
+
+
+PAQUETE SERVICE (Lógica de Negocio)
+-----------------------------------
+
+AnimeService.java
+    - Controlador para operaciones de anime
+    - registrarSerie(), registrarPelicula() - con validaciones
+    - actualizarAnime(), eliminarAnime()
+    - Búsquedas: buscarPorTitulo(), filtrarPorGenero(), busquedaAvanzada()
+    - Ordenamiento: ordenar() con CriterioOrdenamiento
+
+ListaPersonalizadaService.java
+    - Controlador para operaciones de listas
+    - crearLista(), eliminarLista()
+    - agregarAnimeALista(), removerAnimeDeLista()
+
+RecomendacionService.java
+    - Genera recomendaciones usando CriterioRecomendacion
+    - obtenerRecomendaciones() con cualquier estrategia
+    - getTopGlobal(), getTopPorGenero()
+
+EstadisticasService.java
+    - Calcula estadísticas del catálogo
+    - getPromedioCalificacionGlobal(), getPromedioCalificacionPorGenero()
+    - getCantidadPorEstado(), getTop3GenerosMasFrecuentes()
+
+
+PAQUETE UTIL (Utilidades)
+-------------------------
+
+CriterioOrdenamiento.java (INTERFAZ)
+    - Extiende Comparator<AnimeBase>
+    - Define contrato para estrategias de ordenamiento
+
+OrdenamientoPorTitulo.java
+    - Ordena alfabéticamente por título
+
+OrdenamientoPorCalificacion.java
+    - Ordena por calificación (mayor primero)
+
+OrdenamientoPorAnio.java
+    - Ordena por año (más reciente primero)
+
+CriterioRecomendacion.java (INTERFAZ)
+    - Define contrato para estrategias de recomendación
+    - recomendar(List<AnimeBase>, int cantidad)
+
+RecomendacionTopGlobal.java
+    - Recomienda los N mejores del catálogo completo
+
+RecomendacionTopPorGenero.java
+    - Recomienda los N mejores de un género específico
+
+RecomendacionPorEstado.java
+    - Recomienda los N mejores con un estado específico
+
+FiltroAnime.java
+    - Builder para construir filtros de búsqueda paso a paso
+    - Combina múltiples criterios con AND lógico usando cumpleFiltro(anime)
+
+
+PAQUETE EXCEPTION (Excepciones)
+-------------------------------
+
+AnimeException.java (ABSTRACTA)
+    - Clase base para todas las excepciones del dominio
+
+AnimeYaExistenteException.java
+    - Se lanza cuando se intenta crear un anime con título duplicado
+
+AnimeNoEncontradoException.java
+    - Se lanza cuando se busca un anime que no existe
+
+ListaNoEncontradaException.java
+    - Se lanza cuando se busca una lista que no existe
+
+ValidacionException.java
+    - Se lanza cuando los datos no pasan las validaciones
+    - Contiene el nombre del campo que falló
+
+PersistenciaException.java
+    - Se lanza cuando hay errores de I/O al guardar/leer
+
+
+PAQUETE UI (Interfaz Gráfica)
+-----------------------------
+
+MainFrame.java
+    - Ventana principal de la aplicación
+    - Contiene JTabbedPane con las 4 pestañas
+    - Inicializa todos los servicios y repositorios
+    - Configura el tema visual "Wisteria"
+
+AnimePanel.java
+    - Panel del catálogo de anime
+    - Tabla con todos los anime
+    - Filtros de búsqueda
+    - Botones: Nueva Serie, Nueva Película, Editar, Eliminar
+
+ListasPanel.java
+    - Panel de listas personalizadas
+    - Lista de listas a la izquierda
+    - Contenido de la lista seleccionada a la derecha
+
+RecomendacionesPanel.java
+    - Panel de recomendaciones
+    - Selector de criterio y cantidad
+    - Muestra resultados de recomendación
+
+EstadisticasPanel.java
+    - Panel de estadísticas
+    - Muestra métricas del catálogo
+
+AnimeSerieDialog.java
+    - Diálogo para crear/editar series
+    - Campos: título, año, estudio, capítulos, géneros, en emisión
+
+AnimePeliculaDialog.java
+    - Diálogo para crear/editar películas
+    - Campos: título, año, estudio, duración, director, géneros
+
+
+================================================================================
+                    7. RELACIONES ENTRE CLASES
+================================================================================
+
+HERENCIA (extends) - "es un"
+----------------------------
+    AnimeBase (abstracta)
+        ↑
+    ┌───┴───┐
+    │       │
+AnimeSerie  AnimePelicula
+
+"AnimeSerie ES UN AnimeBase"
+"AnimePelicula ES UN AnimeBase"
+
+
+IMPLEMENTACIÓN (implements) - "cumple contrato"
+-----------------------------------------------
+    Calificable (interfaz)
+        △
+        │
+    AnimeBase
+    
+    AnimeRepository (interfaz)
+        △
+        │
+    FileAnimeRepository
+
+"AnimeBase IMPLEMENTA Calificable"
+"FileAnimeRepository IMPLEMENTA AnimeRepository"
+
+
+ASOCIACIÓN - "usa"
+------------------
+    AnimeService ────────> AnimeRepository
+                   usa
+    
+    ListaPersonalizadaService ────> ListaPersonalizadaRepository
+                              usa
+                              
+    MainFrame ────> AnimeService
+              usa
+
+"AnimeService USA AnimeRepository"
+
+
+AGREGACIÓN - "tiene" (el contenido puede existir sin el contenedor)
+-------------------------------------------------------------------
+    ListaPersonalizada ◇────────> AnimeBase
+                       contiene
+    
+Una lista CONTIENE anime, pero si elimino la lista, los anime siguen existiendo.
+Es una relación débil.
+
+
+COMPOSICIÓN - "tiene" (el contenido no existe sin el contenedor)
+----------------------------------------------------------------
+    MainFrame ◆────────> AnimePanel
+              contiene
+              
+MainFrame CONTIENE AnimePanel. Si cierro MainFrame, AnimePanel deja de existir.
+Es una relación fuerte.
+
+
+MULTIPLICIDADES
+---------------
+    ListaPersonalizada (1) ────────> (*) AnimeBase
+    
+    Una lista puede tener muchos anime (0..*)
+    Un anime puede estar en muchas listas (relación N:M)
+
+
+================================================================================
+                   8. EXCEPCIONES PERSONALIZADAS
+================================================================================
+
+¿POR QUÉ CREAR EXCEPCIONES PROPIAS?
+-----------------------------------
+1. CLARIDAD SEMÁNTICA: El nombre indica qué pasó
+2. INFORMACIÓN ADICIONAL: Pueden llevar datos específicos
+3. JERARQUÍA: Se pueden capturar por tipo específico o general
+4. SEPARACIÓN: Distingue errores de negocio de errores técnicos
+
+JERARQUÍA DE EXCEPCIONES:
+
+    Exception (Java)
+        ↑
+    AnimeException (abstracta, nuestra)
+        ↑
+    ┌───┴───────────────┬────────────────────┬─────────────────┬──────────────────┐
+    │                   │                    │                 │                  │
+AnimeYaExistente  AnimeNoEncontrado  ListaNoEncontrada  Validacion        Persistencia
+
+USO EN EL CÓDIGO:
+
+    public AnimeSerie registrarSerie(String titulo, ...) 
+            throws ValidacionException, AnimeYaExistenteException, PersistenciaException {
+        
+        // Si el título está vacío
+        if (titulo == null || titulo.isEmpty()) {
+            throw new ValidacionException("titulo", "El título no puede estar vacío");
+        }
+        
+        // Si ya existe un anime con ese título
+        if (repository.existsByTitulo(titulo)) {
+            throw new AnimeYaExistenteException(titulo);
+        }
+        
+        // ... crear y guardar
+    }
+
+CAPTURA EN LA UI:
+
+    try {
+        animeService.registrarSerie(titulo, anio, ...);
+        JOptionPane.showMessageDialog(this, "Serie creada exitosamente");
+    } catch (AnimeYaExistenteException e) {
+        JOptionPane.showMessageDialog(this, "Ya existe: " + e.getTitulo());
+    } catch (ValidacionException e) {
+        JOptionPane.showMessageDialog(this, "Error en " + e.getCampo() + ": " + e.getMessage());
+    } catch (PersistenciaException e) {
+        JOptionPane.showMessageDialog(this, "Error al guardar: " + e.getMessage());
+    }
+
+
+================================================================================
+                     9. PERSISTENCIA DE DATOS
+================================================================================
+
+¿CÓMO SE GUARDAN LOS DATOS?
+---------------------------
+Se usa SERIALIZACIÓN de Java. Los objetos se convierten a bytes y se guardan
+en archivos binarios (.dat).
+
+REQUISITOS PARA SERIALIZAR:
+1. La clase debe implementar Serializable
+2. Todos los atributos deben ser serializables
+3. Debe tener serialVersionUID
+
+    public abstract class AnimeBase implements Calificable, Serializable {
+        private static final long serialVersionUID = 1L;
+        // ...
+    }
+
+ARCHIVOS:
+    data/
+    ├── animes.dat       <- Catálogo de anime
+    └── listas.dat       <- Listas personalizadas
+
+PROCESO DE GUARDADO:
+    public void saveAll(List<AnimeBase> animes) throws PersistenciaException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(
+                new FileOutputStream(filePath))) {
+            oos.writeObject(animes);
+        } catch (IOException e) {
+            throw new PersistenciaException("Error al guardar", e);
+        }
+    }
+
+PROCESO DE LECTURA:
+    public List<AnimeBase> findAll() throws PersistenciaException {
+        try (ObjectInputStream ois = new ObjectInputStream(
+                new FileInputStream(filePath))) {
+            return (List<AnimeBase>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new PersistenciaException("Error al leer", e);
+        }
+    }
+
+¿POR QUÉ SERIALIZACIÓN Y NO BASE DE DATOS?
+- Es un proyecto académico, no de producción
+- No requiere dependencias externas
+- Es simple y suficiente para el alcance del proyecto
+- Demuestra conocimiento de I/O en Java
+
+
+================================================================================
+                    10. INTERFAZ GRÁFICA (SWING)
+================================================================================
+
+¿QUÉ ES SWING?
+--------------
+Es la biblioteca estándar de Java para crear interfaces gráficas de escritorio.
+Todos los componentes empiezan con "J": JFrame, JPanel, JButton, JTable, etc.
+
+COMPONENTES PRINCIPALES USADOS:
+
+JFrame
+    - Ventana principal de la aplicación
+    - MainFrame extiende JFrame
+
+JPanel
+    - Contenedor para agrupar componentes
+    - AnimePanel, ListasPanel, etc. extienden JPanel
+
+JTabbedPane
+    - Pestañas para organizar contenido
+    - Contiene las 4 secciones del sistema
+
+JTable
+    - Tabla para mostrar datos
+    - Muestra el catálogo de anime
+
+JButton
+    - Botones para acciones
+    - "Nueva Serie", "Editar", "Eliminar", etc.
+
+JTextField
+    - Campo de texto
+    - Para búsqueda y entrada de datos
+
+JComboBox
+    - Lista desplegable
+    - Para seleccionar género, estado, etc.
+
+JDialog
+    - Ventana emergente
+    - AnimeSerieDialog, AnimePeliculaDialog
+
+JOptionPane
+    - Diálogos predefinidos
+    - Mensajes, confirmaciones, errores
+
+
+LAYOUTS (Disposición de componentes)
+------------------------------------
+BorderLayout
+    - Divide en 5 zonas: NORTH, SOUTH, EAST, WEST, CENTER
+    - Usado en MainFrame y paneles principales
+
+FlowLayout
+    - Coloca componentes en línea
+    - Usado en barras de botones
+
+GridLayout
+    - Grilla de filas y columnas
+    - Usado en formularios
+
+
+EVENTOS
+-------
+Los botones responden a clicks mediante ActionListener:
+
+    btnGuardar.addActionListener(e -> {
+        // Código que se ejecuta al hacer click
+        guardarAnime();
+    });
+
+Las tablas responden a selección:
+
+    tabla.getSelectionModel().addListSelectionListener(e -> {
+        // Código cuando se selecciona una fila
+        actualizarDetalles();
+    });
+
+
+TEMA VISUAL "WISTERIA"
+----------------------
+Se personalizaron los colores y fuentes mediante UIManager:
+
+    UIManager.put("Panel.background", new Color(250, 248, 252));
+    UIManager.put("Button.background", new Color(230, 220, 245));
+    // etc.
+
+Paleta de colores:
+- Violetas suaves (wisteria)
+- Grises claros
+- Bordes redondeados personalizados
+
+
+================================================================================
+                 11. PREGUNTAS FRECUENTES DE EXAMEN
+================================================================================
+
+P: ¿Por qué AnimeBase es abstracta?
+R: Porque no tiene sentido crear un "anime genérico". Todo anime es o una serie
+   o una película. La clase abstracta define lo común y fuerza a las subclases
+   a implementar lo específico.
+
+P: ¿Por qué usar interfaces para los Repositories?
+R: Para cumplir con DIP (Dependency Inversion Principle). Los servicios dependen
+   de la abstracción (interfaz), no de la implementación concreta. Esto permite
+   cambiar la implementación sin modificar los servicios.
+
+P: ¿Qué patrón se usa para los criterios de ordenamiento?
+R: El patrón Strategy. Cada criterio es una estrategia diferente que implementa
+   la misma interfaz, permitiendo intercambiarlos en tiempo de ejecución.
+
+P: ¿Cuál es la diferencia entre agregación y composición?
+R: En AGREGACIÓN el contenido puede existir sin el contenedor (ej: anime sin lista).
+   En COMPOSICIÓN el contenido no existe sin el contenedor (ej: panel sin ventana).
+
+P: ¿Por qué las excepciones son personalizadas?
+R: Para tener claridad semántica (el nombre indica qué pasó), llevar información
+   adicional específica, y distinguir errores de negocio de errores técnicos.
+
+P: ¿Qué principio SOLID se aplica al usar herencia?
+R: LSP (Liskov Substitution Principle). AnimeSerie y AnimePelicula pueden
+   sustituir a AnimeBase sin romper el código que usa AnimeBase.
+
+P: ¿Qué patrón GRASP aplica AnimeService?
+R: Controller. Es el punto de entrada para los casos de uso, recibe eventos
+   del sistema (desde la UI) y coordina las operaciones.
+
+P: ¿Por qué AnimeBase implementa equals/hashCode basados en título?
+R: Porque el título es la clave única de negocio. Dos anime con el mismo título
+   se consideran iguales aunque sean instancias diferentes.
+
+P: ¿Qué ventaja tiene la arquitectura por capas?
+R: Separación de responsabilidades, bajo acoplamiento, facilidad para testing,
+   mantenibilidad y escalabilidad.
+
+P: ¿Por qué FiltroAnime usa el patrón Builder?
+R: Para construir filtros complejos paso a paso de forma legible, evitando
+   constructores con muchos parámetros y permitiendo que cada filtro sea opcional.
+
+P: ¿Qué es una Pure Fabrication?
+R: Una clase que no representa un concepto del dominio real, sino que es una
+   "invención" técnica para mejorar el diseño. Los Repositories son Pure Fabrication.
+
+P: ¿Cómo se logra bajo acoplamiento en el proyecto?
+R: Usando interfaces, inyección de dependencias, y la arquitectura por capas
+   donde cada capa solo conoce a las capas adyacentes.
+
+P: ¿Por qué la UI no valida datos?
+R: Por separación de responsabilidades (SRP). La UI solo captura y muestra.
+   La validación es lógica de negocio y pertenece al Service.
+
+
+================================================================================
+                            FIN DEL INFORME
+================================================================================
+
+Con este documento deberías poder:
+1. Explicar qué hace cada clase y por qué existe
+2. Identificar y justificar los patrones aplicados
+3. Defender las decisiones de diseño
+4. Responder preguntas típicas de examen sobre POO
+
+¡Buena suerte en la defensa!
+

@@ -4,7 +4,6 @@ import model.ListaPersonalizada;
 import exception.PersistenciaException;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Interfaz que define las operaciones de persistencia para listas personalizadas.
@@ -38,10 +37,10 @@ public interface ListaPersonalizadaRepository {
      * Busca una lista por su nombre (case-insensitive).
      * 
      * @param nombre nombre de la lista
-     * @return Optional con la lista si existe
+     * @return la lista si existe, null si no
      * @throws PersistenciaException si ocurre un error de I/O
      */
-    Optional<ListaPersonalizada> findByNombre(String nombre) throws PersistenciaException;
+    ListaPersonalizada findByNombre(String nombre) throws PersistenciaException;
     
     /**
      * Obtiene todas las listas personalizadas.
@@ -77,4 +76,3 @@ public interface ListaPersonalizadaRepository {
      */
     int count() throws PersistenciaException;
 }
-

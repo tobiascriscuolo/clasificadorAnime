@@ -186,15 +186,23 @@ public class EstadisticasPanel extends JPanel {
             Map<Genero, Double> promedios = estadisticasService.getPromediosCalificacionPorGenero();
             
             // Ordenar por promedio descendente
-            promedios.entrySet().stream()
-                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .limit(10)
-                .forEach(entry -> {
-                    JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT));
-                    fila.add(new JLabel(String.format("%s: %.2f ⭐",
-                        entry.getKey().getDescripcion(), entry.getValue())));
-                    panelPromediosPorGenero.add(fila);
-                });
+            List<Map.Entry<Genero, Double>> listaPromedios = new ArrayList<>(promedios.entrySet());
+            Collections.sort(listaPromedios, new Comparator<Map.Entry<Genero, Double>>() {
+                @Override
+                public int compare(Map.Entry<Genero, Double> a, Map.Entry<Genero, Double> b) {
+                    return Double.compare(b.getValue(), a.getValue());
+                }
+            });
+            
+            int count = 0;
+            for (Map.Entry<Genero, Double> entry : listaPromedios) {
+                if (count >= 10) break;
+                JPanel fila = new JPanel(new FlowLayout(FlowLayout.LEFT));
+                fila.add(new JLabel(String.format("%s: %.2f",
+                    entry.getKey().getDescripcion(), entry.getValue())));
+                panelPromediosPorGenero.add(fila);
+                count++;
+            }
             
             // Actualizar resumen textual
             txtResumen.setText(resumen.toString());

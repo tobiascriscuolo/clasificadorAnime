@@ -251,11 +251,17 @@ public class RecomendacionesPanel extends JPanel {
         }
         
         private String formatearGeneros(Set<Genero> generos) {
-            return generos.stream()
-                .limit(3)
-                .map(Genero::getDescripcion)
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
+            StringBuilder sb = new StringBuilder();
+            int count = 0;
+            for (Genero genero : generos) {
+                if (count >= 3) break; // Limitar a 3
+                if (count > 0) {
+                    sb.append(", ");
+                }
+                sb.append(genero.getDescripcion());
+                count++;
+            }
+            return sb.toString();
         }
     }
 }

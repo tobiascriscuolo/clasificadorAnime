@@ -7,6 +7,9 @@ import repository.AnimeRepository;
 import exception.PersistenciaException;
 import util.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -82,11 +85,30 @@ public class RecomendacionService {
             .porCalificacionMinima(calificacionMinima)
             .soloCalificados();
         
-        return animeRepository.findAll().stream()
-            .filter(filtro.build())
-            .sorted((a1, a2) -> Integer.compare(a2.getCalificacion(), a1.getCalificacion()))
-            .limit(cantidad)
-            .toList();
+        // Filtrar anime que cumplan los criterios
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> filtrados = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (filtro.cumpleFiltro(anime)) {
+                filtrados.add(anime);
+            }
+        }
+        
+        // Ordenar por calificación (mayor a menor)
+        Collections.sort(filtrados, new Comparator<AnimeBase>() {
+            @Override
+            public int compare(AnimeBase a1, AnimeBase a2) {
+                return Integer.compare(a2.getCalificacion(), a1.getCalificacion());
+            }
+        });
+        
+        // Tomar los primeros N
+        List<AnimeBase> resultado = new ArrayList<>();
+        for (int i = 0; i < Math.min(cantidad, filtrados.size()); i++) {
+            resultado.add(filtrados.get(i));
+        }
+        
+        return resultado;
     }
 }
-

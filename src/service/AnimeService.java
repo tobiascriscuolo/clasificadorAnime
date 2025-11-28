@@ -6,8 +6,6 @@ import exception.*;
 import util.*;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Servicio que coordina los casos de uso relacionados con anime.
@@ -194,8 +192,11 @@ public class AnimeService {
     public AnimeBase buscarPorTituloExacto(String titulo) 
             throws AnimeNoEncontradoException, PersistenciaException {
         
-        return animeRepository.findByTitulo(titulo)
-            .orElseThrow(() -> new AnimeNoEncontradoException(titulo));
+        AnimeBase encontrado = animeRepository.findByTitulo(titulo);
+        if (encontrado == null) {
+            throw new AnimeNoEncontradoException(titulo);
+        }
+        return encontrado;
     }
     
     // ========== RF3: Búsqueda y Filtrado ==========
@@ -210,50 +211,85 @@ public class AnimeService {
             return listarTodos();
         }
         
-        return animeRepository.findAll().stream()
-            .filter(a -> a.tituloContiene(texto.trim()))
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (anime.tituloContiene(texto.trim())) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
      * Busca anime por rango de años.
      */
     public List<AnimeBase> buscarPorRangoAnios(int desde, int hasta) throws PersistenciaException {
-        return animeRepository.findAll().stream()
-            .filter(a -> a.lanzadoEntre(desde, hasta))
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (anime.lanzadoEntre(desde, hasta)) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
      * Filtra anime por género.
      */
     public List<AnimeBase> filtrarPorGenero(Genero genero) throws PersistenciaException {
-        return animeRepository.findAll().stream()
-            .filter(a -> a.perteneceAGenero(genero))
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (anime.perteneceAGenero(genero)) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
      * Filtra anime por estado.
      */
     public List<AnimeBase> filtrarPorEstado(Estado estado) throws PersistenciaException {
-        return animeRepository.findAll().stream()
-            .filter(a -> a.getEstado() == estado)
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (anime.getEstado() == estado) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
      * Filtra anime por calificación mínima.
      */
     public List<AnimeBase> filtrarPorCalificacionMinima(int minima) throws PersistenciaException {
-        return animeRepository.findAll().stream()
-            .filter(a -> a.cumpleCalificacionMinima(minima))
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (anime.cumpleCalificacionMinima(minima)) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
      * Búsqueda avanzada con múltiples criterios combinados.
-     * Usa el Builder FiltroAnime para construir el predicado.
+     * Usa el Builder FiltroAnime para construir los criterios.
      * 
      * GRASP - Indirection: Usa FiltroAnime como intermediario.
      */
@@ -262,18 +298,16 @@ public class AnimeService {
             return listarTodos();
         }
         
-        return animeRepository.findAll().stream()
-            .filter(filtro.build())
-            .collect(Collectors.toList());
-    }
-    
-    /**
-     * Búsqueda avanzada con predicado personalizado.
-     */
-    public List<AnimeBase> busquedaAvanzada(Predicate<AnimeBase> predicado) throws PersistenciaException {
-        return animeRepository.findAll().stream()
-            .filter(predicado)
-            .collect(Collectors.toList());
+        List<AnimeBase> todos = animeRepository.findAll();
+        List<AnimeBase> resultado = new ArrayList<>();
+        
+        for (AnimeBase anime : todos) {
+            if (filtro.cumpleFiltro(anime)) {
+                resultado.add(anime);
+            }
+        }
+        
+        return resultado;
     }
     
     // ========== RF4: Ordenamiento ==========
@@ -286,7 +320,7 @@ public class AnimeService {
      */
     public List<AnimeBase> ordenar(List<AnimeBase> animes, CriterioOrdenamiento criterio) {
         List<AnimeBase> resultado = new ArrayList<>(animes);
-        resultado.sort(criterio);
+        Collections.sort(resultado, criterio);
         return resultado;
     }
     
@@ -372,5 +406,177 @@ public class AnimeService {
     public boolean existeAnime(String titulo) throws PersistenciaException {
         return animeRepository.existsByTitulo(titulo);
     }
+    
+    // ========== Exportación e Importación TXT ==========
+    
+    /**
+     * Exporta todo el catálogo a formato de texto.
+     * Formato: TIPO|TITULO|AÑO|ESTUDIO|DURACION|GENEROS|ESTADO|CALIFICACION|EXTRA
+     * 
+     * @return String con todo el catálogo en formato legible
+     */
+    public String exportarATxt() throws PersistenciaException {
+        List<AnimeBase> animes = listarTodos();
+        StringBuilder sb = new StringBuilder();
+        
+        // Cabecera
+        sb.append("# Catálogo de Anime - Exportado\n");
+        sb.append("# Formato: TIPO|TITULO|AÑO|ESTUDIO|DURACION|GENEROS|ESTADO|CALIFICACION|EXTRA\n");
+        sb.append("# EXTRA para series: EN_EMISION (true/false)\n");
+        sb.append("# EXTRA para películas: DIRECTOR\n");
+        sb.append("#\n");
+        
+        for (AnimeBase anime : animes) {
+            sb.append(animeALinea(anime));
+            sb.append("\n");
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Convierte un anime a una línea de texto.
+     */
+    private String animeALinea(AnimeBase anime) {
+        StringBuilder sb = new StringBuilder();
+        
+        // Tipo
+        sb.append(anime.getTipo().name());
+        sb.append("|");
+        
+        // Título
+        sb.append(anime.getTitulo());
+        sb.append("|");
+        
+        // Año
+        sb.append(anime.getAnioLanzamiento());
+        sb.append("|");
+        
+        // Estudio
+        sb.append(anime.getEstudio());
+        sb.append("|");
+        
+        // Duración
+        sb.append(anime.getDuracion());
+        sb.append("|");
+        
+        // Géneros
+        boolean primero = true;
+        for (Genero g : anime.getGeneros()) {
+            if (!primero) sb.append(",");
+            sb.append(g.name());
+            primero = false;
+        }
+        sb.append("|");
+        
+        // Estado
+        sb.append(anime.getEstado().name());
+        sb.append("|");
+        
+        // Calificación
+        sb.append(anime.tieneCalificacion() ? anime.getCalificacion() : "0");
+        sb.append("|");
+        
+        // Extra (según tipo)
+        if (anime instanceof AnimeSerie) {
+            sb.append(((AnimeSerie) anime).isEnEmision());
+        } else if (anime instanceof AnimePelicula) {
+            sb.append(((AnimePelicula) anime).getDirector());
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Parsea una línea de texto a un anime.
+     * 
+     * @param linea línea en formato TIPO|TITULO|AÑO|ESTUDIO|DURACION|GENEROS|ESTADO|CALIFICACION|EXTRA
+     * @return el anime parseado, o null si la línea es inválida o es comentario
+     */
+    public AnimeBase parsearLineaAnime(String linea) {
+        if (linea == null || linea.trim().isEmpty() || linea.trim().startsWith("#")) {
+            return null;
+        }
+        
+        String[] partes = linea.split("\\|");
+        if (partes.length < 8) {
+            return null;
+        }
+        
+        try {
+            String tipo = partes[0].trim().toUpperCase();
+            String titulo = partes[1].trim();
+            int anio = Integer.parseInt(partes[2].trim());
+            String estudio = partes[3].trim();
+            int duracion = Integer.parseInt(partes[4].trim());
+            
+            // Parsear géneros
+            Set<Genero> generos = new HashSet<>();
+            String[] generosStr = partes[5].split(",");
+            for (String g : generosStr) {
+                try {
+                    generos.add(Genero.valueOf(g.trim().toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    // Ignorar género inválido
+                }
+            }
+            if (generos.isEmpty()) {
+                generos.add(Genero.SHONEN); // Default
+            }
+            
+            // Parsear estado
+            Estado estado = Estado.POR_VER;
+            try {
+                estado = Estado.valueOf(partes[6].trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Usar default
+            }
+            
+            // Parsear calificación
+            int calificacion = 0;
+            try {
+                calificacion = Integer.parseInt(partes[7].trim());
+            } catch (NumberFormatException e) {
+                // Sin calificación
+            }
+            
+            // Extra
+            String extra = partes.length > 8 ? partes[8].trim() : "";
+            
+            // Crear anime según tipo
+            AnimeBase anime;
+            if (tipo.equals("SERIE")) {
+                boolean enEmision = extra.equalsIgnoreCase("true");
+                anime = new AnimeSerie(titulo, anio, estudio, duracion, generos, enEmision);
+            } else if (tipo.equals("PELICULA")) {
+                anime = new AnimePelicula(titulo, anio, estudio, duracion, generos, extra);
+            } else {
+                return null;
+            }
+            
+            // Establecer estado y calificación
+            anime.setEstado(estado);
+            if (calificacion >= AnimeBase.CALIFICACION_MINIMA && calificacion <= AnimeBase.CALIFICACION_MAXIMA) {
+                anime.setCalificacion(calificacion);
+            }
+            
+            return anime;
+            
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Registra un anime directamente (usado para importación).
+     * 
+     * @return true si se registró, false si ya existía
+     */
+    public boolean registrarAnimeDirecto(AnimeBase anime) throws PersistenciaException {
+        if (animeRepository.existsByTitulo(anime.getTitulo())) {
+            return false;
+        }
+        animeRepository.save(anime);
+        return true;
+    }
 }
-

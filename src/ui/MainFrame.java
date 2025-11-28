@@ -91,7 +91,18 @@ public class MainFrame extends JFrame {
         itemSalir.setAccelerator(KeyStroke.getKeyStroke("alt F4"));
         itemSalir.addActionListener(e -> confirmarSalida());
         
+        JMenuItem itemExportar = new JMenuItem("Exportar catálogo a TXT...");
+        itemExportar.setAccelerator(KeyStroke.getKeyStroke("control E"));
+        itemExportar.addActionListener(e -> exportarCatalogo());
+        
+        JMenuItem itemImportar = new JMenuItem("Importar desde TXT...");
+        itemImportar.setAccelerator(KeyStroke.getKeyStroke("control I"));
+        itemImportar.addActionListener(e -> importarCatalogo());
+        
         menuArchivo.add(itemGuardar);
+        menuArchivo.addSeparator();
+        menuArchivo.add(itemExportar);
+        menuArchivo.add(itemImportar);
         menuArchivo.addSeparator();
         menuArchivo.add(itemSalir);
         
@@ -146,11 +157,12 @@ public class MainFrame extends JFrame {
         recomendacionesPanel = new RecomendacionesPanel(recomendacionService, animeService);
         estadisticasPanel = new EstadisticasPanel(estadisticasService);
         
-        // Agregar pestañas
-        tabbedPane.addTab("🎬 Catálogo de Animé", animePanel);
-        tabbedPane.addTab("📋 Listas Personalizadas", listasPanel);
-        tabbedPane.addTab("⭐ Recomendaciones", recomendacionesPanel);
-        tabbedPane.addTab("📊 Estadísticas", estadisticasPanel);
+        // Agregar pestañas con estrellas amarillas
+        Icon starIcon = new StarIcon(16, new Color(255, 200, 50));
+        tabbedPane.addTab("Catálogo de Animé", starIcon, animePanel);
+        tabbedPane.addTab("Listas Personalizadas", starIcon, listasPanel);
+        tabbedPane.addTab("Recomendaciones", starIcon, recomendacionesPanel);
+        tabbedPane.addTab("Estadísticas", starIcon, estadisticasPanel);
         
         // Listener para refrescar al cambiar de pestaña
         tabbedPane.addChangeListener(e -> refrescarPestañaActual());
@@ -216,6 +228,179 @@ public class MainFrame extends JFrame {
                 JOptionPane.ERROR_MESSAGE
             );
         }
+    }
+    
+    /**
+     * Exporta el catálogo completo a un archivo TXT.
+     */
+    private void exportarCatalogo() {
+        try {
+            String contenido = animeService.exportarATxt();
+            
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Exportar catálogo");
+            fileChooser.setSelectedFile(new java.io.File("catalogo_anime.txt"));
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos de texto (*.txt)", "txt"));
+            
+            int resultado = fileChooser.showSaveDialog(this);
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                java.io.File archivo = fileChooser.getSelectedFile();
+                // Asegurar extensión .txt
+                if (!archivo.getName().toLowerCase().endsWith(".txt")) {
+                    archivo = new java.io.File(archivo.getAbsolutePath() + ".txt");
+                }
+                
+                java.io.FileWriter writer = new java.io.FileWriter(archivo);
+                writer.write(contenido);
+                writer.close();
+                
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Catálogo exportado exitosamente a:\n" + archivo.getAbsolutePath(),
+                    "Exportación completada",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error al exportar: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    
+    /**
+     * Importa anime desde un archivo TXT.
+     */
+    private void importarCatalogo() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Importar catálogo");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Archivos de texto (*.txt)", "txt"));
+        
+        int resultado = fileChooser.showOpenDialog(this);
+        if (resultado != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        
+        java.io.File archivo = fileChooser.getSelectedFile();
+        
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(archivo));
+            String linea;
+            int importados = 0;
+            int omitidos = 0;
+            int errores = 0;
+            
+            while ((linea = reader.readLine()) != null) {
+                model.AnimeBase anime = animeService.parsearLineaAnime(linea);
+                
+                if (anime == null) {
+                    // Línea vacía, comentario o error de formato
+                    if (!linea.trim().isEmpty() && !linea.trim().startsWith("#")) {
+                        errores++;
+                    }
+                    continue;
+                }
+                
+                // Verificar si ya existe
+                if (animeService.existeAnime(anime.getTitulo())) {
+                    // Mostrar diálogo de conflicto
+                    int opcion = mostrarDialogoConflicto(anime);
+                    
+                    if (opcion == 0) {
+                        // Cambiar nombre
+                        String nuevoTitulo = pedirNuevoTitulo(anime.getTitulo());
+                        if (nuevoTitulo != null && !nuevoTitulo.trim().isEmpty()) {
+                            anime.setTitulo(nuevoTitulo.trim());
+                            // Verificar de nuevo
+                            if (animeService.existeAnime(anime.getTitulo())) {
+                                JOptionPane.showMessageDialog(this, 
+                                    "El título '" + anime.getTitulo() + "' también existe.\nNo se importará este anime.",
+                                    "Conflicto", JOptionPane.WARNING_MESSAGE);
+                                omitidos++;
+                            } else {
+                                animeService.registrarAnimeDirecto(anime);
+                                importados++;
+                            }
+                        } else {
+                            omitidos++;
+                        }
+                    } else {
+                        // No importar
+                        omitidos++;
+                    }
+                } else {
+                    // No existe, importar directamente
+                    animeService.registrarAnimeDirecto(anime);
+                    importados++;
+                }
+            }
+            reader.close();
+            
+            // Refrescar UI
+            refrescarTodo();
+            
+            // Mostrar resumen
+            StringBuilder mensaje = new StringBuilder();
+            mensaje.append("Importación completada:\n\n");
+            mensaje.append("• Importados: ").append(importados).append("\n");
+            mensaje.append("• Omitidos (duplicados): ").append(omitidos).append("\n");
+            if (errores > 0) {
+                mensaje.append("• Líneas con errores: ").append(errores).append("\n");
+            }
+            
+            JOptionPane.showMessageDialog(
+                this,
+                mensaje.toString(),
+                "Importación",
+                JOptionPane.INFORMATION_MESSAGE
+            );
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error al importar: " + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    
+    /**
+     * Muestra un diálogo cuando hay conflicto de título duplicado.
+     * 
+     * @return 0 = cambiar nombre, 1 = no importar
+     */
+    private int mostrarDialogoConflicto(model.AnimeBase anime) {
+        String mensaje = "El anime '" + anime.getTitulo() + "' ya existe en el catálogo.\n\n" +
+            "¿Qué desea hacer?";
+        
+        String[] opciones = {"Cambiar título", "No importar"};
+        
+        return JOptionPane.showOptionDialog(
+            this,
+            mensaje,
+            "Anime duplicado",
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            opciones,
+            opciones[1]
+        );
+    }
+    
+    /**
+     * Pide al usuario un nuevo título para un anime.
+     */
+    private String pedirNuevoTitulo(String tituloOriginal) {
+        return JOptionPane.showInputDialog(
+            this,
+            "Ingrese un nuevo título para '" + tituloOriginal + "':",
+            "Nuevo título",
+            JOptionPane.QUESTION_MESSAGE
+        );
     }
     
     private void refrescarPestañaActual() {
@@ -627,6 +812,71 @@ public class MainFrame extends JFrame {
         @Override
         protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) {
             return super.calculateTabHeight(tabPlacement, tabIndex, fontHeight) + 8;
+        }
+    }
+    
+    /**
+     * Icono de estrella personalizado para las pestañas.
+     */
+    static class StarIcon implements Icon {
+        private int size;
+        private Color color;
+        
+        public StarIcon(int size, Color color) {
+            this.size = size;
+            this.color = color;
+        }
+        
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            // Crear forma de estrella de 5 puntas
+            int[] xPoints = new int[10];
+            int[] yPoints = new int[10];
+            double angle = -Math.PI / 2; // Empezar desde arriba
+            double deltaAngle = Math.PI / 5;
+            int outerRadius = size / 2;
+            int innerRadius = size / 5;
+            int centerX = x + size / 2;
+            int centerY = y + size / 2;
+            
+            for (int i = 0; i < 10; i++) {
+                int radius = (i % 2 == 0) ? outerRadius : innerRadius;
+                xPoints[i] = centerX + (int)(radius * Math.cos(angle));
+                yPoints[i] = centerY + (int)(radius * Math.sin(angle));
+                angle += deltaAngle;
+            }
+            
+            // Dibujar estrella con borde oscuro y relleno amarillo
+            g2.setColor(new Color(180, 140, 20)); // Borde dorado oscuro
+            g2.fillPolygon(xPoints, yPoints, 10);
+            
+            // Estrella interior más clara
+            int[] xInner = new int[10];
+            int[] yInner = new int[10];
+            angle = -Math.PI / 2;
+            for (int i = 0; i < 10; i++) {
+                int radius = (i % 2 == 0) ? outerRadius - 2 : innerRadius;
+                xInner[i] = centerX + (int)(radius * Math.cos(angle));
+                yInner[i] = centerY + (int)(radius * Math.sin(angle));
+                angle += deltaAngle;
+            }
+            g2.setColor(color);
+            g2.fillPolygon(xInner, yInner, 10);
+            
+            g2.dispose();
+        }
+        
+        @Override
+        public int getIconWidth() {
+            return size;
+        }
+        
+        @Override
+        public int getIconHeight() {
+            return size;
         }
     }
     

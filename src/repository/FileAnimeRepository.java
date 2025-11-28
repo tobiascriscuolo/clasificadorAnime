@@ -6,7 +6,6 @@ import exception.PersistenciaException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementación de AnimeRepository que persiste datos en archivo binario (serialización).
@@ -53,9 +52,9 @@ public class FileAnimeRepository implements AnimeRepository {
         loadIfNeeded();
         
         // Buscar si ya existe y actualizar, o agregar nuevo
-        Optional<AnimeBase> existente = findInCache(anime.getTitulo());
-        if (existente.isPresent()) {
-            int index = cache.indexOf(existente.get());
+        AnimeBase existente = findInCache(anime.getTitulo());
+        if (existente != null) {
+            int index = cache.indexOf(existente);
             cache.set(index, anime);
         } else {
             cache.add(anime);
@@ -72,7 +71,7 @@ public class FileAnimeRepository implements AnimeRepository {
     }
     
     @Override
-    public Optional<AnimeBase> findByTitulo(String titulo) throws PersistenciaException {
+    public AnimeBase findByTitulo(String titulo) throws PersistenciaException {
         loadIfNeeded();
         return findInCache(titulo);
     }
@@ -87,9 +86,9 @@ public class FileAnimeRepository implements AnimeRepository {
     public boolean deleteByTitulo(String titulo) throws PersistenciaException {
         loadIfNeeded();
         
-        Optional<AnimeBase> anime = findInCache(titulo);
-        if (anime.isPresent()) {
-            cache.remove(anime.get());
+        AnimeBase anime = findInCache(titulo);
+        if (anime != null) {
+            cache.remove(anime);
             persist();
             return true;
         }
@@ -104,7 +103,7 @@ public class FileAnimeRepository implements AnimeRepository {
     @Override
     public boolean existsByTitulo(String titulo) throws PersistenciaException {
         loadIfNeeded();
-        return findInCache(titulo).isPresent();
+        return findInCache(titulo) != null;
     }
     
     @Override
@@ -186,11 +185,17 @@ public class FileAnimeRepository implements AnimeRepository {
     
     /**
      * Busca un anime en la caché por título (case-insensitive).
+     * 
+     * @param titulo título a buscar
+     * @return el anime si existe, null si no
      */
-    private Optional<AnimeBase> findInCache(String titulo) {
-        return cache.stream()
-            .filter(a -> a.getTitulo().equalsIgnoreCase(titulo))
-            .findFirst();
+    private AnimeBase findInCache(String titulo) {
+        for (AnimeBase anime : cache) {
+            if (anime.getTitulo().equalsIgnoreCase(titulo)) {
+                return anime;
+            }
+        }
+        return null;
     }
     
     /**
@@ -202,4 +207,3 @@ public class FileAnimeRepository implements AnimeRepository {
         cache.clear();
     }
 }
-

@@ -80,8 +80,12 @@ public class ListaPersonalizada implements Serializable {
      * Verifica si la lista contiene un anime por título.
      */
     public boolean contieneAnimePorTitulo(String titulo) {
-        return animes.stream()
-            .anyMatch(a -> a.getTitulo().equalsIgnoreCase(titulo));
+        for (AnimeBase anime : animes) {
+            if (anime.getTitulo().equalsIgnoreCase(titulo)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**

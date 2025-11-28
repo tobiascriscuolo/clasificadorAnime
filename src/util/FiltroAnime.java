@@ -6,7 +6,6 @@ import model.Genero;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * Builder para construir filtros combinados de anime.
@@ -14,17 +13,25 @@ import java.util.function.Predicate;
  * 
  * SOLID - SRP: Solo se encarga de la construcción de filtros.
  * 
- * GRASP - Information Expert: Conoce cómo combinar predicados de filtrado.
+ * GRASP - Information Expert: Conoce cómo combinar criterios de filtrado.
  * 
- * Patrón Builder: Facilita la construcción de filtros complejos.
+ * Patrón Builder: Facilita la construcción de filtros complejos paso a paso.
  */
 public class FiltroAnime {
     
-    private Predicate<AnimeBase> predicado;
+    // Criterios de filtrado almacenados
+    private String textoBusqueda;
+    private Integer anioDesde;
+    private Integer anioHasta;
+    private Genero genero;
+    private Set<Genero> generos;
+    private Estado estado;
+    private Integer calificacionMinima;
+    private boolean soloCalificados;
+    private String estudio;
     
     public FiltroAnime() {
-        // Predicado inicial que acepta todo
-        this.predicado = a -> true;
+        this.soloCalificados = false;
     }
     
     /**
@@ -32,7 +39,7 @@ public class FiltroAnime {
      */
     public FiltroAnime porTitulo(String texto) {
         if (texto != null && !texto.trim().isEmpty()) {
-            predicado = predicado.and(a -> a.tituloContiene(texto.trim()));
+            this.textoBusqueda = texto.trim();
         }
         return this;
     }
@@ -41,13 +48,8 @@ public class FiltroAnime {
      * Filtra por rango de años.
      */
     public FiltroAnime porRangoAnios(Integer desde, Integer hasta) {
-        if (desde != null && hasta != null) {
-            predicado = predicado.and(a -> a.lanzadoEntre(desde, hasta));
-        } else if (desde != null) {
-            predicado = predicado.and(a -> a.getAnioLanzamiento() >= desde);
-        } else if (hasta != null) {
-            predicado = predicado.and(a -> a.getAnioLanzamiento() <= hasta);
-        }
+        this.anioDesde = desde;
+        this.anioHasta = hasta;
         return this;
     }
     
@@ -55,9 +57,7 @@ public class FiltroAnime {
      * Filtra por género específico.
      */
     public FiltroAnime porGenero(Genero genero) {
-        if (genero != null) {
-            predicado = predicado.and(a -> a.perteneceAGenero(genero));
-        }
+        this.genero = genero;
         return this;
     }
     
@@ -66,8 +66,7 @@ public class FiltroAnime {
      */
     public FiltroAnime porGeneros(Set<Genero> generos) {
         if (generos != null && !generos.isEmpty()) {
-            Set<Genero> copia = new HashSet<>(generos);
-            predicado = predicado.and(a -> a.perteneceAAlgunGenero(copia));
+            this.generos = new HashSet<>(generos);
         }
         return this;
     }
@@ -76,9 +75,7 @@ public class FiltroAnime {
      * Filtra por estado.
      */
     public FiltroAnime porEstado(Estado estado) {
-        if (estado != null) {
-            predicado = predicado.and(a -> a.getEstado() == estado);
-        }
+        this.estado = estado;
         return this;
     }
     
@@ -87,7 +84,7 @@ public class FiltroAnime {
      */
     public FiltroAnime porCalificacionMinima(Integer minima) {
         if (minima != null && minima > 0) {
-            predicado = predicado.and(a -> a.cumpleCalificacionMinima(minima));
+            this.calificacionMinima = minima;
         }
         return this;
     }
@@ -96,7 +93,7 @@ public class FiltroAnime {
      * Filtra solo anime con calificación.
      */
     public FiltroAnime soloCalificados() {
-        predicado = predicado.and(AnimeBase::tieneCalificacion);
+        this.soloCalificados = true;
         return this;
     }
     
@@ -105,24 +102,79 @@ public class FiltroAnime {
      */
     public FiltroAnime porEstudio(String estudio) {
         if (estudio != null && !estudio.trim().isEmpty()) {
-            String estudioLower = estudio.trim().toLowerCase();
-            predicado = predicado.and(a -> a.getEstudio().toLowerCase().contains(estudioLower));
+            this.estudio = estudio.trim().toLowerCase();
         }
         return this;
     }
     
     /**
-     * Retorna el predicado construido.
+     * Evalúa si un anime cumple TODOS los criterios del filtro.
+     * Combina los criterios con AND lógico.
+     * 
+     * @param anime el anime a evaluar
+     * @return true si cumple todos los criterios, false si no cumple alguno
      */
-    public Predicate<AnimeBase> build() {
-        return predicado;
+    public boolean cumpleFiltro(AnimeBase anime) {
+        // Verificar cada criterio - si alguno falla, retorna false
+        
+        // Filtro por título
+        if (textoBusqueda != null && !anime.tituloContiene(textoBusqueda)) {
+            return false;
+        }
+        
+        // Filtro por rango de años
+        if (anioDesde != null && anioHasta != null) {
+            if (!anime.lanzadoEntre(anioDesde, anioHasta)) {
+                return false;
+            }
+        } else if (anioDesde != null) {
+            if (anime.getAnioLanzamiento() < anioDesde) {
+                return false;
+            }
+        } else if (anioHasta != null) {
+            if (anime.getAnioLanzamiento() > anioHasta) {
+                return false;
+            }
+        }
+        
+        // Filtro por género específico
+        if (genero != null && !anime.perteneceAGenero(genero)) {
+            return false;
+        }
+        
+        // Filtro por conjunto de géneros
+        if (generos != null && !generos.isEmpty() && !anime.perteneceAAlgunGenero(generos)) {
+            return false;
+        }
+        
+        // Filtro por estado
+        if (estado != null && anime.getEstado() != estado) {
+            return false;
+        }
+        
+        // Filtro por calificación mínima
+        if (calificacionMinima != null && !anime.cumpleCalificacionMinima(calificacionMinima)) {
+            return false;
+        }
+        
+        // Filtro solo calificados
+        if (soloCalificados && !anime.tieneCalificacion()) {
+            return false;
+        }
+        
+        // Filtro por estudio
+        if (estudio != null && !anime.getEstudio().toLowerCase().contains(estudio)) {
+            return false;
+        }
+        
+        // Si pasó todos los filtros, cumple
+        return true;
     }
     
     /**
-     * Evalúa si un anime cumple el filtro.
+     * Alias de cumpleFiltro para compatibilidad.
      */
     public boolean test(AnimeBase anime) {
-        return predicado.test(anime);
+        return cumpleFiltro(anime);
     }
 }
-

@@ -6,6 +6,7 @@ import repository.AnimeRepository;
 import repository.ListaPersonalizadaRepository;
 import exception.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -122,8 +123,11 @@ public class ListaPersonalizadaService {
     public ListaPersonalizada buscarListaPorNombre(String nombre)
             throws ListaNoEncontradaException, PersistenciaException {
         
-        return listaRepository.findByNombre(nombre)
-            .orElseThrow(() -> new ListaNoEncontradaException(nombre));
+        ListaPersonalizada lista = listaRepository.findByNombre(nombre);
+        if (lista == null) {
+            throw new ListaNoEncontradaException(nombre);
+        }
+        return lista;
     }
     
     /**
@@ -186,9 +190,16 @@ public class ListaPersonalizadaService {
     public List<ListaPersonalizada> obtenerListasConAnime(String tituloAnime)
             throws PersistenciaException {
         
-        return listaRepository.findAll().stream()
-            .filter(lista -> lista.contieneAnimePorTitulo(tituloAnime))
-            .toList();
+        List<ListaPersonalizada> todas = listaRepository.findAll();
+        List<ListaPersonalizada> resultado = new ArrayList<>();
+        
+        for (ListaPersonalizada lista : todas) {
+            if (lista.contieneAnimePorTitulo(tituloAnime)) {
+                resultado.add(lista);
+            }
+        }
+        
+        return resultado;
     }
     
     /**
@@ -209,8 +220,10 @@ public class ListaPersonalizadaService {
     private AnimeBase buscarAnimePorTitulo(String titulo)
             throws AnimeNoEncontradoException, PersistenciaException {
         
-        return animeRepository.findByTitulo(titulo)
-            .orElseThrow(() -> new AnimeNoEncontradoException(titulo));
+        AnimeBase anime = animeRepository.findByTitulo(titulo);
+        if (anime == null) {
+            throw new AnimeNoEncontradoException(titulo);
+        }
+        return anime;
     }
 }
-

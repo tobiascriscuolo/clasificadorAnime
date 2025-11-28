@@ -2,6 +2,11 @@
 # Sistema de Clasificación de Animé
 # ================================
 
+# INSTRUCCIONES PARA CURSOR:
+# Cada vez que se haga una modificación al proyecto, agregar una línea nueva
+# al final de este archivo con el formato: "Título corto: Descripción breve."
+# No olvidar actualizar este archivo después de cada cambio.
+
 Compatibilidad Java 8: Se modificó el código para ser compatible con Java 8, cambiando Text Blocks por concatenación de strings y Pattern Matching instanceof por casting tradicional.
 
 Acceso directo: Se creó ClasificadorAnime.bat para ejecutar la aplicación fácilmente con doble clic, incluyendo compilación automática si es necesario.
@@ -17,4 +22,14 @@ Pestañas personalizadas: Se creó un UI personalizado para las pestañas (Round
 Alineación de pestañas: Se corrigió la alineación de las pestañas para que no se desplacen al seleccionarlas, manteniendo el mismo tamaño de fuente.
 
 Pestañas flotantes: Las pestañas no seleccionadas ahora aparecen "despegadas" del contenido, mientras que la seleccionada se integra perfectamente sin línea de corte visible.
+
+Estrellas amarillas en pestañas: Se reemplazaron los emojis (que aparecían como cuadrados) por íconos de estrellas amarillas personalizados dibujados con Graphics2D.
+
+Íconos en botones del catálogo: Se agregaron íconos personalizados a los botones - signo + verde para Nueva Serie/Película, lápiz dorado para Editar, cruz roja para Eliminar, y + azul para Agregar a lista.
+
+Informe completo: Se creó INFORME_COMPLETO.txt con explicación detallada de todo el proyecto - conceptos POO, SOLID, GRASP, patrones de diseño, cada clase, relaciones, y preguntas frecuentes de examen.
+
+Código sin Java 8: Se reemplazaron TODOS los streams, lambdas, Optional y Predicate por for loops tradicionales y null checks para usar solo conceptos vistos en clase (colecciones, Comparator, for-each).
+
+Exportar/Importar TXT: Se agregó funcionalidad para exportar el catálogo a archivo TXT (Archivo > Exportar) e importar desde TXT (Archivo > Importar). Al importar, si hay duplicados, se pregunta uno por uno si cambiar el título o no importar.
 

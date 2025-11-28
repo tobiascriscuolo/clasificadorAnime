@@ -7,7 +7,6 @@ import repository.AnimeRepository;
 import exception.PersistenciaException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Servicio que proporciona estadísticas sobre el catálogo de anime.
@@ -38,11 +37,21 @@ public class EstadisticasService {
     public double getPromedioCalificacionGlobal() throws PersistenciaException {
         List<AnimeBase> animes = animeRepository.findAll();
         
-        return animes.stream()
-            .filter(AnimeBase::tieneCalificacion)
-            .mapToInt(AnimeBase::getCalificacion)
-            .average()
-            .orElse(0.0);
+        int suma = 0;
+        int cantidad = 0;
+        
+        for (AnimeBase anime : animes) {
+            if (anime.tieneCalificacion()) {
+                suma += anime.getCalificacion();
+                cantidad++;
+            }
+        }
+        
+        if (cantidad == 0) {
+            return 0.0;
+        }
+        
+        return (double) suma / cantidad;
     }
     
     /**
@@ -54,12 +63,21 @@ public class EstadisticasService {
     public double getPromedioCalificacionPorGenero(Genero genero) throws PersistenciaException {
         List<AnimeBase> animes = animeRepository.findAll();
         
-        return animes.stream()
-            .filter(a -> a.perteneceAGenero(genero))
-            .filter(AnimeBase::tieneCalificacion)
-            .mapToInt(AnimeBase::getCalificacion)
-            .average()
-            .orElse(0.0);
+        int suma = 0;
+        int cantidad = 0;
+        
+        for (AnimeBase anime : animes) {
+            if (anime.perteneceAGenero(genero) && anime.tieneCalificacion()) {
+                suma += anime.getCalificacion();
+                cantidad++;
+            }
+        }
+        
+        if (cantidad == 0) {
+            return 0.0;
+        }
+        
+        return (double) suma / cantidad;
     }
     
     /**
@@ -88,12 +106,16 @@ public class EstadisticasService {
     public Map<Estado, Long> getCantidadPorEstado() throws PersistenciaException {
         List<AnimeBase> animes = animeRepository.findAll();
         
-        Map<Estado, Long> conteo = animes.stream()
-            .collect(Collectors.groupingBy(AnimeBase::getEstado, Collectors.counting()));
-        
-        // Asegurar que todos los estados estén presentes
+        // Inicializar contadores para todos los estados
+        Map<Estado, Long> conteo = new EnumMap<>(Estado.class);
         for (Estado estado : Estado.values()) {
-            conteo.putIfAbsent(estado, 0L);
+            conteo.put(estado, 0L);
+        }
+        
+        // Contar
+        for (AnimeBase anime : animes) {
+            Estado estado = anime.getEstado();
+            conteo.put(estado, conteo.get(estado) + 1);
         }
         
         return conteo;
@@ -112,15 +134,31 @@ public class EstadisticasService {
         
         for (AnimeBase anime : animes) {
             for (Genero genero : anime.getGeneros()) {
-                conteoGeneros.merge(genero, 1L, Long::sum);
+                Long actual = conteoGeneros.get(genero);
+                if (actual == null) {
+                    conteoGeneros.put(genero, 1L);
+                } else {
+                    conteoGeneros.put(genero, actual + 1);
+                }
             }
         }
         
-        // Ordenar por frecuencia y tomar top 3
-        return conteoGeneros.entrySet().stream()
-            .sorted(Map.Entry.<Genero, Long>comparingByValue().reversed())
-            .limit(3)
-            .collect(Collectors.toList());
+        // Convertir a lista y ordenar por cantidad (mayor a menor)
+        List<Map.Entry<Genero, Long>> listaOrdenada = new ArrayList<>(conteoGeneros.entrySet());
+        Collections.sort(listaOrdenada, new Comparator<Map.Entry<Genero, Long>>() {
+            @Override
+            public int compare(Map.Entry<Genero, Long> e1, Map.Entry<Genero, Long> e2) {
+                return e2.getValue().compareTo(e1.getValue()); // Orden descendente
+            }
+        });
+        
+        // Tomar los primeros 3
+        List<Map.Entry<Genero, Long>> top3 = new ArrayList<>();
+        for (int i = 0; i < Math.min(3, listaOrdenada.size()); i++) {
+            top3.add(listaOrdenada.get(i));
+        }
+        
+        return top3;
     }
     
     /**
@@ -135,7 +173,12 @@ public class EstadisticasService {
         
         for (AnimeBase anime : animes) {
             for (Genero genero : anime.getGeneros()) {
-                distribucion.merge(genero, 1L, Long::sum);
+                Long actual = distribucion.get(genero);
+                if (actual == null) {
+                    distribucion.put(genero, 1L);
+                } else {
+                    distribucion.put(genero, actual + 1);
+                }
             }
         }
         
@@ -151,31 +194,52 @@ public class EstadisticasService {
         List<AnimeBase> animes = animeRepository.findAll();
         
         int totalAnimes = animes.size();
-        long animesCalificados = animes.stream().filter(AnimeBase::tieneCalificacion).count();
+        
+        // Contar anime calificados
+        int animesCalificados = 0;
+        for (AnimeBase anime : animes) {
+            if (anime.tieneCalificacion()) {
+                animesCalificados++;
+            }
+        }
+        
         double promedioGlobal = getPromedioCalificacionGlobal();
         Map<Estado, Long> porEstado = getCantidadPorEstado();
         List<Map.Entry<Genero, Long>> topGeneros = getTop3GenerosMasFrecuentes();
         
-        // Anime más antiguo y más nuevo
-        Optional<AnimeBase> masAntiguo = animes.stream()
-            .min(Comparator.comparingInt(AnimeBase::getAnioLanzamiento));
-        Optional<AnimeBase> masNuevo = animes.stream()
-            .max(Comparator.comparingInt(AnimeBase::getAnioLanzamiento));
+        // Encontrar anime más antiguo, más nuevo y mejor calificado
+        AnimeBase masAntiguo = null;
+        AnimeBase masNuevo = null;
+        AnimeBase mejorCalificado = null;
         
-        // Anime mejor calificado
-        Optional<AnimeBase> mejorCalificado = animes.stream()
-            .filter(AnimeBase::tieneCalificacion)
-            .max(Comparator.comparingInt(AnimeBase::getCalificacion));
+        for (AnimeBase anime : animes) {
+            // Más antiguo
+            if (masAntiguo == null || anime.getAnioLanzamiento() < masAntiguo.getAnioLanzamiento()) {
+                masAntiguo = anime;
+            }
+            
+            // Más nuevo
+            if (masNuevo == null || anime.getAnioLanzamiento() > masNuevo.getAnioLanzamiento()) {
+                masNuevo = anime;
+            }
+            
+            // Mejor calificado
+            if (anime.tieneCalificacion()) {
+                if (mejorCalificado == null || anime.getCalificacion() > mejorCalificado.getCalificacion()) {
+                    mejorCalificado = anime;
+                }
+            }
+        }
         
         return new ResumenEstadisticas(
             totalAnimes,
-            (int) animesCalificados,
+            animesCalificados,
             promedioGlobal,
             porEstado,
             topGeneros,
-            masAntiguo.orElse(null),
-            masNuevo.orElse(null),
-            mejorCalificado.orElse(null)
+            masAntiguo,
+            masNuevo,
+            mejorCalificado
         );
     }
     
@@ -228,8 +292,9 @@ public class EstadisticasService {
             sb.append(String.format("Promedio de calificación: %.2f\n", promedioCalificacion));
             
             sb.append("\nPor estado:\n");
-            cantidadPorEstado.forEach((estado, cantidad) -> 
-                sb.append(String.format("  %s: %d\n", estado.getDescripcion(), cantidad)));
+            for (Map.Entry<Estado, Long> entry : cantidadPorEstado.entrySet()) {
+                sb.append(String.format("  %s: %d\n", entry.getKey().getDescripcion(), entry.getValue()));
+            }
             
             sb.append("\nTop 3 géneros:\n");
             for (int i = 0; i < topGeneros.size(); i++) {
@@ -247,4 +312,3 @@ public class EstadisticasService {
         }
     }
 }
-

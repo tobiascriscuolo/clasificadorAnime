@@ -154,27 +154,27 @@ public class AnimePanel extends JPanel {
     private void crearPanelInferior() {
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
         
-        JButton btnNuevaSerie = new JButton("➕ Nueva Serie");
+        JButton btnNuevaSerie = new JButton("Nueva Serie", new PlusIcon(14, new Color(80, 160, 80)));
         btnNuevaSerie.addActionListener(e -> mostrarDialogoNuevaSerie());
         panelBotones.add(btnNuevaSerie);
         
-        JButton btnNuevaPelicula = new JButton("➕ Nueva Película");
+        JButton btnNuevaPelicula = new JButton("Nueva Película", new PlusIcon(14, new Color(80, 160, 80)));
         btnNuevaPelicula.addActionListener(e -> mostrarDialogoNuevaPelicula());
         panelBotones.add(btnNuevaPelicula);
         
         panelBotones.add(Box.createHorizontalStrut(20));
         
-        JButton btnEditar = new JButton("✏️ Editar");
+        JButton btnEditar = new JButton("Editar", new PencilIcon(14, new Color(180, 140, 60)));
         btnEditar.addActionListener(e -> editarAnimeSeleccionado());
         panelBotones.add(btnEditar);
         
-        JButton btnEliminar = new JButton("🗑️ Eliminar");
+        JButton btnEliminar = new JButton("Eliminar", new CrossIcon(14, new Color(200, 60, 60)));
         btnEliminar.addActionListener(e -> eliminarAnimeSeleccionado());
         panelBotones.add(btnEliminar);
         
         panelBotones.add(Box.createHorizontalStrut(20));
         
-        JButton btnAgregarALista = new JButton("📋 Agregar a lista...");
+        JButton btnAgregarALista = new JButton("Agregar a lista...", new PlusIcon(14, new Color(100, 100, 180)));
         btnAgregarALista.addActionListener(e -> agregarAListaSeleccionada());
         panelBotones.add(btnAgregarALista);
         
@@ -510,11 +510,137 @@ public class AnimePanel extends JPanel {
         }
         
         private String formatearGeneros(Set<Genero> generos) {
-            return generos.stream()
-                .map(Genero::getDescripcion)
-                .reduce((a, b) -> a + ", " + b)
-                .orElse("");
+            StringBuilder sb = new StringBuilder();
+            boolean primero = true;
+            for (Genero genero : generos) {
+                if (!primero) {
+                    sb.append(", ");
+                }
+                sb.append(genero.getDescripcion());
+                primero = false;
+            }
+            return sb.toString();
         }
+    }
+    
+    // ========== Íconos personalizados ==========
+    
+    /**
+     * Ícono de signo más (+) para botones de agregar.
+     */
+    static class PlusIcon implements Icon {
+        private int size;
+        private Color color;
+        
+        public PlusIcon(int size, Color color) {
+            this.size = size;
+            this.color = color;
+        }
+        
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            
+            int margin = 2;
+            int centerX = x + size / 2;
+            int centerY = y + size / 2;
+            
+            // Línea horizontal
+            g2.drawLine(x + margin, centerY, x + size - margin, centerY);
+            // Línea vertical
+            g2.drawLine(centerX, y + margin, centerX, y + size - margin);
+            
+            g2.dispose();
+        }
+        
+        @Override
+        public int getIconWidth() { return size; }
+        
+        @Override
+        public int getIconHeight() { return size; }
+    }
+    
+    /**
+     * Ícono de lápiz para botón de editar.
+     */
+    static class PencilIcon implements Icon {
+        private int size;
+        private Color color;
+        
+        public PencilIcon(int size, Color color) {
+            this.size = size;
+            this.color = color;
+        }
+        
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            // Cuerpo del lápiz (rectángulo inclinado)
+            int[] xPoints = {x + 2, x + size - 4, x + size - 2, x + 4};
+            int[] yPoints = {y + size - 4, y + 2, y + 4, y + size - 2};
+            
+            g2.setColor(color);
+            g2.fillPolygon(xPoints, yPoints, 4);
+            
+            // Borde del lápiz
+            g2.setColor(color.darker());
+            g2.setStroke(new BasicStroke(1f));
+            g2.drawPolygon(xPoints, yPoints, 4);
+            
+            // Punta del lápiz
+            g2.setColor(new Color(60, 60, 60));
+            int[] xPunta = {x, x + 2, x + 4};
+            int[] yPunta = {y + size, y + size - 4, y + size - 2};
+            g2.fillPolygon(xPunta, yPunta, 3);
+            
+            g2.dispose();
+        }
+        
+        @Override
+        public int getIconWidth() { return size; }
+        
+        @Override
+        public int getIconHeight() { return size; }
+    }
+    
+    /**
+     * Ícono de cruz (X) roja para botón de eliminar.
+     */
+    static class CrossIcon implements Icon {
+        private int size;
+        private Color color;
+        
+        public CrossIcon(int size, Color color) {
+            this.size = size;
+            this.color = color;
+        }
+        
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            
+            int margin = 2;
+            // Línea diagonal \
+            g2.drawLine(x + margin, y + margin, x + size - margin, y + size - margin);
+            // Línea diagonal /
+            g2.drawLine(x + size - margin, y + margin, x + margin, y + size - margin);
+            
+            g2.dispose();
+        }
+        
+        @Override
+        public int getIconWidth() { return size; }
+        
+        @Override
+        public int getIconHeight() { return size; }
     }
 }
 

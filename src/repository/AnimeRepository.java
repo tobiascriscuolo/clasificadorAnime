@@ -4,7 +4,6 @@ import model.AnimeBase;
 import exception.PersistenciaException;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Interfaz que define las operaciones de persistencia para anime.
@@ -43,10 +42,10 @@ public interface AnimeRepository {
      * Busca un anime por su título exacto (case-insensitive).
      * 
      * @param titulo título a buscar
-     * @return Optional con el anime si existe, vacío si no
+     * @return el anime si existe, null si no
      * @throws PersistenciaException si ocurre un error de I/O
      */
-    Optional<AnimeBase> findByTitulo(String titulo) throws PersistenciaException;
+    AnimeBase findByTitulo(String titulo) throws PersistenciaException;
     
     /**
      * Obtiene todos los anime del repositorio.
@@ -98,4 +97,3 @@ public interface AnimeRepository {
      */
     void deleteAll() throws PersistenciaException;
 }
-

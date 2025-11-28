@@ -6,7 +6,6 @@ import exception.PersistenciaException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementación de ListaPersonalizadaRepository que persiste en archivo binario.
@@ -39,9 +38,9 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
     public void save(ListaPersonalizada lista) throws PersistenciaException {
         loadIfNeeded();
         
-        Optional<ListaPersonalizada> existente = findInCache(lista.getNombre());
-        if (existente.isPresent()) {
-            int index = cache.indexOf(existente.get());
+        ListaPersonalizada existente = findInCache(lista.getNombre());
+        if (existente != null) {
+            int index = cache.indexOf(existente);
             cache.set(index, lista);
         } else {
             cache.add(lista);
@@ -58,7 +57,7 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
     }
     
     @Override
-    public Optional<ListaPersonalizada> findByNombre(String nombre) throws PersistenciaException {
+    public ListaPersonalizada findByNombre(String nombre) throws PersistenciaException {
         loadIfNeeded();
         return findInCache(nombre);
     }
@@ -73,9 +72,9 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
     public boolean deleteByNombre(String nombre) throws PersistenciaException {
         loadIfNeeded();
         
-        Optional<ListaPersonalizada> lista = findInCache(nombre);
-        if (lista.isPresent()) {
-            cache.remove(lista.get());
+        ListaPersonalizada lista = findInCache(nombre);
+        if (lista != null) {
+            cache.remove(lista);
             persist();
             return true;
         }
@@ -85,7 +84,7 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
     @Override
     public boolean existsByNombre(String nombre) throws PersistenciaException {
         loadIfNeeded();
-        return findInCache(nombre).isPresent();
+        return findInCache(nombre) != null;
     }
     
     @Override
@@ -147,10 +146,19 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
         }
     }
     
-    private Optional<ListaPersonalizada> findInCache(String nombre) {
-        return cache.stream()
-            .filter(l -> l.getNombre().equalsIgnoreCase(nombre))
-            .findFirst();
+    /**
+     * Busca una lista en la caché por nombre (case-insensitive).
+     * 
+     * @param nombre nombre a buscar
+     * @return la lista si existe, null si no
+     */
+    private ListaPersonalizada findInCache(String nombre) {
+        for (ListaPersonalizada lista : cache) {
+            if (lista.getNombre().equalsIgnoreCase(nombre)) {
+                return lista;
+            }
+        }
+        return null;
     }
     
     public void invalidateCache() {
@@ -158,4 +166,3 @@ public class FileListaPersonalizadaRepository implements ListaPersonalizadaRepos
         cache.clear();
     }
 }
-
