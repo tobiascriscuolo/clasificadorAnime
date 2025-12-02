@@ -1,0 +1,142 @@
+@startuml
+title Diagrama de Secuencia - Editar, Eliminar y Calificar Anime
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #7B68EE
+    LifeLineBorderColor #9370DB
+    ParticipantBackgroundColor #F5F5FF
+    ParticipantBorderColor #9370DB
+    ActorBorderColor #7B68EE
+}
+
+actor Usuario
+participant "PanelAnime" as UI <<vista>>
+participant "ServicioAnime" as Servicio <<servicio>>
+participant "RepositorioAnime" as Repo <<repositorio>>
+
+== EDITAR ANIME ==
+Usuario -> UI: Selecciona anime en tabla
+Usuario -> UI: Clic botón <color:orange><b>[✏]</b></color> (Editar)
+activate UI
+
+note right of UI
+    <color:orange><b>IconoLapiz</b></color>
+    Botón naranja con lápiz
+    para editar anime
+end note
+
+UI -> UI: obtenerAnimeSeleccionado()
+UI -> UI: mostrarDialogoEdicion(anime)
+UI --> Usuario: Muestra formulario con datos
+
+Usuario -> UI: Modifica campos
+Usuario -> UI: Clic "Guardar"
+
+UI -> Servicio: actualizarAnime(tituloOriginal, nuevosDatos...)
+activate Servicio
+
+Servicio -> Servicio: validarDatos()
+Servicio -> Repo: buscarPorTitulo(tituloOriginal)
+activate Repo
+Repo --> Servicio: AnimeBase existente
+deactivate Repo
+
+Servicio -> Servicio: anime.actualizarDatos(...)
+Servicio -> Repo: guardar(anime)
+activate Repo
+Repo --> Servicio: void
+deactivate Repo
+
+Servicio --> UI: Anime actualizado
+deactivate Servicio
+
+UI -> UI: actualizarTabla()
+UI --> Usuario: "Anime actualizado correctamente"
+deactivate UI
+
+== ELIMINAR ANIME ==
+Usuario -> UI: Selecciona anime en tabla
+Usuario -> UI: Clic botón <color:red><b>[✕]</b></color> (Eliminar)
+activate UI
+
+note right of UI
+    <color:red><b>IconoCruz</b></color>
+    Botón rojo con cruz
+    para eliminar anime
+end note
+
+UI -> UI: obtenerAnimeSeleccionado()
+UI --> Usuario: JOptionPane.showConfirmDialog\n"¿Eliminar 'Naruto'?"
+
+Usuario -> UI: Confirma eliminación
+
+UI -> Servicio: eliminarAnime(titulo)
+activate Servicio
+
+Servicio -> Repo: eliminarPorTitulo(titulo)
+activate Repo
+Repo -> Repo: removerDeCache(titulo)
+Repo -> Repo: persistir()
+Repo --> Servicio: true
+deactivate Repo
+
+Servicio --> UI: true (eliminado)
+deactivate Servicio
+
+UI -> UI: actualizarTabla()
+UI --> Usuario: "Anime eliminado correctamente"
+deactivate UI
+
+== CALIFICAR ANIME ==
+Usuario -> UI: Selecciona anime en tabla
+Usuario -> UI: Clic botón <color:gold><b>[★]</b></color> (Calificar)
+activate UI
+
+note right of UI
+    <color:gold><b>IconoEstrella</b></color>
+    Botón amarillo con estrella
+    para calificar anime
+end note
+
+UI -> UI: obtenerAnimeSeleccionado()
+UI --> Usuario: JOptionPane.showInputDialog\n"Calificación (1-5):"
+
+Usuario -> UI: Ingresa calificación: 4
+
+UI -> Servicio: calificarAnime(titulo, 4)
+activate Servicio
+
+Servicio -> Repo: buscarPorTitulo(titulo)
+activate Repo
+Repo --> Servicio: AnimeBase
+deactivate Repo
+
+Servicio -> Servicio: anime.establecerCalificacion(4)
+
+note right of Servicio
+    <b>GRASP - Information Expert:</b>
+    El anime sabe cómo establecer
+    su propia calificación
+end note
+
+Servicio -> Repo: guardar(anime)
+activate Repo
+Repo --> Servicio: void
+deactivate Repo
+
+Servicio --> UI: void
+deactivate Servicio
+
+UI -> UI: actualizarTabla()
+
+note right of UI
+    La tabla muestra la calificación
+    como <color:gold><b>★★★★☆</b></color> (4 estrellas)
+    usando <b>RenderizadorEstrellas</b>
+end note
+
+UI --> Usuario: Tabla actualizada con ★★★★☆
+deactivate UI
+
+@enduml
+

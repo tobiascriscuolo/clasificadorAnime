@@ -1,0 +1,132 @@
+@startuml
+title Diagrama de Secuencia - Gestión de Listas Personalizadas
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #7B68EE
+    LifeLineBorderColor #9370DB
+    ParticipantBackgroundColor #F5F5FF
+    ParticipantBorderColor #9370DB
+    ActorBorderColor #7B68EE
+}
+
+actor Usuario
+participant "PanelListas" as Panel <<vista>>
+participant "ServicioListaPersonalizada" as Servicio <<servicio>>
+participant "RepositorioListaPersonalizada" as RepoLista <<repositorio>>
+participant "RepositorioAnime" as RepoAnime <<repositorio>>
+entity "ListaPersonalizada" as Lista <<modelo>>
+
+== Crear Nueva Lista ==
+Usuario -> Panel: Clic "Nueva Lista"
+activate Panel
+Panel -> Panel: mostrarDialogoNuevaLista()
+Usuario -> Panel: Ingresa nombre "Mis Favoritos"
+Usuario -> Panel: Ingresa descripción
+Usuario -> Panel: Clic "Crear"
+
+Panel -> Servicio: crearLista("Mis Favoritos", descripcion)
+activate Servicio
+
+Servicio -> RepoLista: existePorNombre("Mis Favoritos")
+activate RepoLista
+RepoLista --> Servicio: false
+deactivate RepoLista
+
+create Lista
+Servicio -> Lista: new ListaPersonalizada("Mis Favoritos", descripcion)
+
+Servicio -> RepoLista: guardar(lista)
+activate RepoLista
+RepoLista -> RepoLista: agregarACache(lista)
+RepoLista -> RepoLista: persistir()
+RepoLista --> Servicio: void
+deactivate RepoLista
+
+Servicio --> Panel: ListaPersonalizada creada
+deactivate Servicio
+
+Panel -> Panel: actualizarListaDeListas()
+Panel --> Usuario: "Lista creada correctamente"
+deactivate Panel
+
+== Agregar Anime a Lista ==
+Usuario -> Panel: Selecciona lista "Mis Favoritos"
+Usuario -> Panel: Selecciona anime de tabla derecha
+Usuario -> Panel: Clic "Agregar a Lista"
+
+activate Panel
+Panel -> Servicio: agregarAnimeALista("Mis Favoritos", "Naruto")
+activate Servicio
+
+Servicio -> RepoLista: buscarPorNombre("Mis Favoritos")
+activate RepoLista
+RepoLista --> Servicio: ListaPersonalizada
+deactivate RepoLista
+
+Servicio -> RepoAnime: buscarPorTitulo("Naruto")
+activate RepoAnime
+RepoAnime --> Servicio: AnimeBase
+deactivate RepoAnime
+
+Servicio -> Lista: agregarAnime(anime)
+activate Lista
+
+note right of Lista
+    <b>GRASP - Information Expert:</b>
+    La lista tiene la información
+    para gestionar sus propios animes
+end note
+
+Lista -> Lista: contieneAnime(anime)?
+alt ya contiene el anime
+    Lista --> Servicio: false
+    Servicio --> Panel: "El anime ya está en la lista"
+else no contiene
+    Lista -> Lista: animes.add(anime)
+    Lista --> Servicio: true
+    deactivate Lista
+    
+    Servicio -> RepoLista: guardar(lista)
+    activate RepoLista
+    RepoLista --> Servicio: void
+    deactivate RepoLista
+    
+    Servicio --> Panel: true
+    deactivate Servicio
+    
+    Panel -> Panel: actualizarTablaAnimesLista()
+    Panel --> Usuario: "Anime agregado a la lista"
+end
+
+deactivate Panel
+
+== Quitar Anime de Lista ==
+Usuario -> Panel: Selecciona anime de la lista
+Usuario -> Panel: Clic "Quitar de Lista"
+
+activate Panel
+Panel -> Servicio: removerAnimeDeLista("Mis Favoritos", "Naruto")
+activate Servicio
+
+Servicio -> RepoLista: buscarPorNombre("Mis Favoritos")
+activate RepoLista
+RepoLista --> Servicio: ListaPersonalizada
+deactivate RepoLista
+
+Servicio -> Lista: removerAnime(anime)
+Lista --> Servicio: true
+
+Servicio -> RepoLista: guardar(lista)
+activate RepoLista
+RepoLista --> Servicio: void
+deactivate RepoLista
+
+Servicio --> Panel: true
+deactivate Servicio
+
+Panel -> Panel: actualizarTablaAnimesLista()
+Panel --> Usuario: "Anime eliminado de la lista"
+deactivate Panel
+
+@enduml
+

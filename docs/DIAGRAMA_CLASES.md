@@ -1,11 +1,11 @@
 # Diagrama de Clases - Descripción Textual
 
-## 1. Paquete `model` - Clases de Dominio
+## 1. Paquete `modelo` - Clases de Dominio
 
 ### Interfaces
 - **Calificable** (interface)
-  - `+getCalificacion(): int`
-  - `+setCalificacion(int): void`
+  - `+obtenerCalificacion(): int`
+  - `+establecerCalificacion(int): void`
   - `+tieneCalificacion(): boolean`
 
 ### Enumeraciones
@@ -25,9 +25,9 @@
 - `-generos: Set<Genero>`
 
 **Métodos:**
-- `+getTipo(): TipoAnime` (abstracto)
-- `+getDuracion(): int` (abstracto)
-- `+getDescripcionDuracion(): String` (abstracto)
+- `+obtenerTipo(): TipoAnime` (abstracto)
+- `+obtenerDuracion(): int` (abstracto)
+- `+obtenerDescripcionDuracion(): String` (abstracto)
 - `+perteneceAGenero(Genero): boolean`
 - `+lanzadoEntre(int, int): boolean`
 - `+tituloContiene(String): boolean`
@@ -60,7 +60,7 @@
 - `+agregarAnime(AnimeBase): boolean`
 - `+removerAnime(AnimeBase): boolean`
 - `+contieneAnime(AnimeBase): boolean`
-- `+getCantidadAnimes(): int`
+- `+obtenerCantidadAnimes(): int`
 
 **Relaciones:**
 - Agregación con AnimeBase (0..* -- 0..*)
@@ -69,43 +69,43 @@
 
 ---
 
-## 2. Paquete `repository` - Persistencia
+## 2. Paquete `repositorio` - Persistencia
 
 ### Interfaces
 
-#### AnimeRepository
-- `+save(AnimeBase): void`
-- `+saveAll(List<AnimeBase>): void`
-- `+findByTitulo(String): Optional<AnimeBase>`
-- `+findAll(): List<AnimeBase>`
-- `+deleteByTitulo(String): boolean`
-- `+existsByTitulo(String): boolean`
-- `+count(): int`
+#### RepositorioAnime
+- `+guardar(AnimeBase): void`
+- `+guardarTodos(List<AnimeBase>): void`
+- `+buscarPorTitulo(String): AnimeBase`
+- `+obtenerTodos(): List<AnimeBase>`
+- `+eliminarPorTitulo(String): boolean`
+- `+existePorTitulo(String): boolean`
+- `+contar(): int`
 
-#### ListaPersonalizadaRepository
-- `+save(ListaPersonalizada): void`
-- `+findByNombre(String): Optional<ListaPersonalizada>`
-- `+findAll(): List<ListaPersonalizada>`
-- `+deleteByNombre(String): boolean`
+#### RepositorioListaPersonalizada
+- `+guardar(ListaPersonalizada): void`
+- `+buscarPorNombre(String): ListaPersonalizada`
+- `+obtenerTodas(): List<ListaPersonalizada>`
+- `+eliminarPorNombre(String): boolean`
 
 ### Implementaciones
 
-#### FileAnimeRepository implements AnimeRepository
-- `-filePath: String`
+#### RepositorioAnimeArchivo implements RepositorioAnime
+- `-rutaArchivo: String`
 - `-cache: List<AnimeBase>`
 - Persiste en archivo binario usando serialización Java
 
-#### FileListaPersonalizadaRepository implements ListaPersonalizadaRepository
-- `-filePath: String`
+#### RepositorioListaPersonalizadaArchivo implements RepositorioListaPersonalizada
+- `-rutaArchivo: String`
 - `-cache: List<ListaPersonalizada>`
 
 ---
 
-## 3. Paquete `service` - Lógica de Negocio
+## 3. Paquete `servicio` - Lógica de Negocio
 
-#### AnimeService
+#### ServicioAnime
 **Atributos:**
-- `-animeRepository: AnimeRepository` (inyectado)
+- `-repositorioAnime: RepositorioAnime` (inyectado)
 
 **Métodos:**
 - `+registrarSerie(...)`: AnimeSerie
@@ -118,48 +118,48 @@
 - `+ordenar(List, CriterioOrdenamiento): List<AnimeBase>`
 
 **Relaciones:**
-- Depende de AnimeRepository (interfaz) → DIP
+- Depende de RepositorioAnime (interfaz) → DIP
 
-#### ListaPersonalizadaService
+#### ServicioListaPersonalizada
 **Atributos:**
-- `-listaRepository: ListaPersonalizadaRepository`
-- `-animeRepository: AnimeRepository`
+- `-repositorioLista: RepositorioListaPersonalizada`
+- `-repositorioAnime: RepositorioAnime`
 
 **Métodos:**
 - `+crearLista(String, String): ListaPersonalizada`
 - `+agregarAnimeALista(String, String): boolean`
 - `+removerAnimeDeLista(String, String): boolean`
 
-#### RecomendacionService
+#### ServicioRecomendacion
 **Atributos:**
-- `-animeRepository: AnimeRepository`
+- `-repositorioAnime: RepositorioAnime`
 
 **Métodos:**
 - `+obtenerRecomendaciones(CriterioRecomendacion, int): List<AnimeBase>`
-- `+getTopGlobal(int): List<AnimeBase>`
-- `+getTopPorGenero(Genero, int): List<AnimeBase>`
+- `+obtenerTopGlobal(int): List<AnimeBase>`
+- `+obtenerTopPorGenero(Genero, int): List<AnimeBase>`
 
-#### EstadisticasService
+#### ServicioEstadisticas
 **Métodos:**
-- `+getPromedioCalificacionGlobal(): double`
-- `+getPromedioCalificacionPorGenero(Genero): double`
-- `+getCantidadPorEstado(): Map<Estado, Long>`
-- `+getTop3GenerosMasFrecuentes(): List<Entry<Genero, Long>>`
+- `+obtenerPromedioCalificacionGlobal(): double`
+- `+obtenerPromedioCalificacionPorGenero(Genero): double`
+- `+obtenerCantidadPorEstado(): Map<Estado, Long>`
+- `+obtenerTop3GenerosMasFrecuentes(): List<Entry<Genero, Long>>`
 
 ---
 
-## 4. Paquete `util` - Estrategias
+## 4. Paquete `utilidad` - Estrategias
 
 ### Interfaces
 
 #### CriterioOrdenamiento extends Comparator<AnimeBase>
-- `+compare(AnimeBase, AnimeBase): int`
-- `+getDescripcion(): String`
+- `+comparar(AnimeBase, AnimeBase): int`
+- `+obtenerDescripcion(): String`
 
 #### CriterioRecomendacion
 - `+recomendar(List<AnimeBase>, int): List<AnimeBase>`
-- `+getNombre(): String`
-- `+getDescripcion(): String`
+- `+obtenerNombre(): String`
+- `+obtenerDescripcion(): String`
 
 ### Implementaciones de Ordenamiento
 - **OrdenamientoPorTitulo**: Alfabético
@@ -178,65 +178,52 @@
 - `+porGenero(Genero): FiltroAnime`
 - `+porEstado(Estado): FiltroAnime`
 - `+porCalificacionMinima(Integer): FiltroAnime`
-- `+build(): Predicate<AnimeBase>`
+- `+construir(): Predicate<AnimeBase>`
 
 ---
 
-## 5. Paquete `exception` - Excepciones
+## 5. Paquete `vista` - Interfaz Gráfica
 
-```
-AnimeException (abstracta)
-├── AnimeYaExistenteException
-├── AnimeNoEncontradoException
-├── ListaNoEncontradaException
-├── ValidacionException
-└── PersistenciaException
-```
-
----
-
-## 6. Paquete `ui` - Interfaz Gráfica
-
-#### MainFrame extends JFrame
+#### VentanaPrincipal extends JFrame
 - Ventana principal con JTabbedPane
 - Coordina los paneles
 
-#### AnimePanel extends JPanel
+#### PanelAnime extends JPanel
 - Tabla de anime con filtros
 - Diálogos de creación/edición
 
-#### ListasPanel extends JPanel
+#### PanelListas extends JPanel
 - Lista de listas personalizadas
 - Tabla de anime por lista
 
-#### RecomendacionesPanel extends JPanel
+#### PanelRecomendaciones extends JPanel
 - Configuración de criterios
 - Resultados de recomendaciones
 
-#### EstadisticasPanel extends JPanel
+#### PanelEstadisticas extends JPanel
 - Tarjetas con métricas
 - Gráficos de distribución
 
 #### Diálogos
-- **AnimeSerieDialog**: Crear/editar serie
-- **AnimePeliculaDialog**: Crear/editar película
+- **DialogoAnimeSerie**: Crear/editar serie
+- **DialogoAnimePelicula**: Crear/editar película
 
 ---
 
 ## Relaciones Principales
 
 ```
-┌─────────────┐     usa      ┌───────────────┐     implementa     ┌──────────────────────┐
-│  MainFrame  │─────────────>│ AnimeService  │<──────────────────│ FileAnimeRepository  │
-│  (UI)       │              │ (Controller)  │                    │ (Pure Fabrication)   │
-└─────────────┘              └───────────────┘                    └──────────────────────┘
-                                    │                                       │
-                                    │ depende de                            │ implementa
-                                    ▼                                       ▼
-                             ┌───────────────┐                    ┌──────────────────┐
-                             │AnimeRepository│                    │ <<interface>>    │
-                             │ (Interface)   │                    │ AnimeRepository  │
-                             └───────────────┘                    └──────────────────┘
+┌────────────────────┐     usa      ┌─────────────────┐     implementa     ┌─────────────────────────┐
+│  VentanaPrincipal  │─────────────>│  ServicioAnime  │<──────────────────│ RepositorioAnimeArchivo │
+│  (Vista)           │              │  (Controlador)  │                    │ (Pure Fabrication)      │
+└────────────────────┘              └─────────────────┘                    └─────────────────────────┘
+                                           │                                         │
+                                           │ depende de                              │ implementa
+                                           ▼                                         ▼
+                                    ┌─────────────────┐                    ┌──────────────────────┐
+                                    │RepositorioAnime │                    │ <<interface>>        │
+                                    │ (Interface)     │                    │ RepositorioAnime     │
+                                    └─────────────────┘                    └──────────────────────┘
 
 ┌─────────────┐                                    ┌─────────────┐
 │ AnimeSerie  │────────extends────────────────────>│ AnimeBase   │<───implements───┐
@@ -260,6 +247,39 @@ AnimeException (abstracta)
 |----------|---------------|
 | ListaPersonalizada - AnimeBase | N:M (Un anime puede estar en múltiples listas) |
 | AnimeBase - Genero | 1:N (Un anime tiene múltiples géneros) |
-| Service - Repository | 1:1 (Inyección de dependencia) |
-| MainFrame - Panel | 1:N (Composición) |
+| Servicio - Repositorio | 1:1 (Inyección de dependencia) |
+| VentanaPrincipal - Panel | 1:N (Composición) |
+
+---
+
+## Archivos UML PlantUML
+
+Los diagramas están disponibles en formato PlantUML en la carpeta `docs/uml/`:
+
+### Diagramas de Secuencia
+| Archivo | Descripción |
+|---------|-------------|
+| `01_registrar_anime.puml` | Registrar nuevo anime (botón **[+]** verde) |
+| `02_aplicar_filtro.puml` | Aplicar filtros y búsqueda |
+| `05_recomendaciones.puml` | Obtener recomendaciones |
+| `09_gestion_listas.puml` | Gestión de listas personalizadas |
+| `11_editar_eliminar_calificar.puml` | Editar **[✏]**, Eliminar **[✕]** y Calificar **[★]** |
+
+### Diagramas de Clases
+| Archivo | Descripción |
+|---------|-------------|
+| `03_clases_modelo.puml` | Paquete modelo (AnimeBase, AnimeSerie, etc.) |
+| `04_arquitectura.puml` | Arquitectura MVC por capas |
+| `07_servicios.puml` | Servicios y repositorios |
+| `08_utilidades_estrategias.puml` | Estrategias (ordenamiento, recomendación, filtros) |
+| `10_vista_ui.puml` | Interfaz gráfica (paneles, diálogos, iconos) |
+| `12_iconos_detalle.puml` | **Iconos personalizados** (IconoMas, IconoLapiz, IconoCruz, IconoEstrella) |
+
+### Iconos de la Barra de Herramientas
+| Icono | Color | Acción | Clase |
+|-------|-------|--------|-------|
+| **[+]** | 🟢 Verde | Nueva Serie / Nueva Película | `IconoMas` |
+| **[✏]** | 🟠 Naranja | Editar anime | `IconoLapiz` |
+| **[✕]** | 🔴 Rojo | Eliminar anime | `IconoCruz` |
+| **[★]** | 🟡 Amarillo | Calificar anime | `IconoEstrella` |
 

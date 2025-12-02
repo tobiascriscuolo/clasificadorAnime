@@ -1,64 +1,146 @@
 @startuml
-title Diagrama de Clases - Modelo
-skinparam monochrome true
-
-interface Calificable {
-  +getCalificacion(): int
-  +setCalificacion(int): void
-  +tieneCalificacion(): boolean
+title Diagrama de Clases - Paquete Modelo
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
+    ArrowColor #7B68EE
 }
 
-abstract class AnimeBase {
-  -titulo: String
-  -anioLanzamiento: int
-  -estudio: String
-  -estado: Estado
-  -calificacionUsuario: int
-  -generos: Set<Genero>
-  +getTipo(): TipoAnime
-  +getDuracion(): int
-  +perteneceAGenero(Genero): boolean
+package "modelo" {
+    
+    interface Calificable <<interface>> {
+        +obtenerCalificacion(): int
+        +establecerCalificacion(calificacion: int): void
+        +tieneCalificacion(): boolean
+    }
+    
+    enum Estado {
+        POR_VER
+        VIENDO
+        FINALIZADO
+        ABANDONADO
+        --
+        +obtenerDescripcion(): String
+    }
+    
+    enum Genero {
+        SHONEN
+        SHOJO
+        SEINEN
+        JOSEI
+        MECHA
+        ISEKAI
+        SLICE_OF_LIFE
+        --
+        +obtenerDescripcion(): String
+    }
+    
+    enum TipoAnime {
+        SERIE
+        PELICULA
+        --
+        +obtenerDescripcion(): String
+    }
+    
+    abstract class AnimeBase {
+        #titulo: String
+        #anioLanzamiento: int
+        #estudio: String
+        #estado: Estado
+        #calificacionUsuario: int
+        #generos: Set<Genero>
+        --
+        +{abstract} obtenerTipo(): TipoAnime
+        +{abstract} obtenerDuracion(): int
+        +{abstract} obtenerDescripcionDuracion(): String
+        --
+        +obtenerTitulo(): String
+        +establecerTitulo(titulo: String): void
+        +obtenerAnioLanzamiento(): int
+        +obtenerEstudio(): String
+        +obtenerEstado(): Estado
+        +establecerEstado(estado: Estado): void
+        +obtenerGeneros(): Set<Genero>
+        +agregarGenero(genero: Genero): void
+        --
+        +perteneceAGenero(genero: Genero): boolean
+        +perteneceAAlgunGenero(generos: Set<Genero>): boolean
+        +lanzadoEntre(desde: int, hasta: int): boolean
+        +tituloContiene(texto: String): boolean
+        +cumpleCalificacionMinima(minima: int): boolean
+    }
+    
+    class AnimeSerie {
+        -cantidadCapitulos: int
+        -enEmision: boolean
+        --
+        +obtenerCantidadCapitulos(): int
+        +establecerCantidadCapitulos(cantidad: int): void
+        +estaEnEmision(): boolean
+        +establecerEnEmision(enEmision: boolean): void
+    }
+    
+    class AnimePelicula {
+        -duracionMinutos: int
+        -director: String
+        --
+        +obtenerDuracionMinutos(): int
+        +establecerDuracionMinutos(duracion: int): void
+        +obtenerDirector(): String
+        +establecerDirector(director: String): void
+    }
+    
+    class ListaPersonalizada {
+        -nombre: String
+        -descripcion: String
+        -animes: List<AnimeBase>
+        --
+        +obtenerNombre(): String
+        +establecerNombre(nombre: String): void
+        +obtenerDescripcion(): String
+        +obtenerAnimes(): List<AnimeBase>
+        +obtenerCantidadAnimes(): int
+        --
+        +agregarAnime(anime: AnimeBase): boolean
+        +removerAnime(anime: AnimeBase): boolean
+        +contieneAnime(anime: AnimeBase): boolean
+        +contieneAnimePorTitulo(titulo: String): boolean
+        +estaVacia(): boolean
+        +limpiar(): void
+    }
 }
 
-class AnimeSerie {
-  -cantidadCapitulos: int
-  -enEmision: boolean
-}
+' Relaciones
+AnimeBase ..|> Calificable : implementa
+AnimeSerie --|> AnimeBase : extiende
+AnimePelicula --|> AnimeBase : extiende
 
-class AnimePelicula {
-  -duracionMinutos: int
-  -director: String
-}
+AnimeBase --> "1" Estado : tiene
+AnimeBase --> "1..*" Genero : tiene
+AnimeBase --> "1" TipoAnime : es de tipo
 
-class ListaPersonalizada {
-  -nombre: String
-  -descripcion: String
-  -animes: List<AnimeBase>
-  +agregarAnime(AnimeBase): boolean
-  +removerAnime(AnimeBase): boolean
-}
+ListaPersonalizada "0..*" o-- "0..*" AnimeBase : contiene
 
-enum Estado {
-  POR_VER
-  VIENDO
-  FINALIZADO
-  ABANDONADO
-}
+note bottom of AnimeBase
+    <b>SOLID - LSP:</b>
+    AnimeSerie y AnimePelicula pueden
+    sustituir a AnimeBase sin alterar
+    el comportamiento del programa
+end note
 
-enum Genero {
-  SHONEN
-  SHOJO
-  SEINEN
-  JOSEI
-  MECHA
-  ISEKAI
-  SLICE_OF_LIFE
-}
+note right of Calificable
+    <b>SOLID - ISP:</b>
+    Interfaz pequeña y específica
+    solo para comportamiento
+    de calificación
+end note
 
-AnimeBase ..|> Calificable
-AnimeSerie --|> AnimeBase
-AnimePelicula --|> AnimeBase
-AnimeBase --> Estado
-AnimeBase --> "*" Genero
-ListaPersonalizada o-- "*" AnimeBase
+note bottom of ListaPersonalizada
+    <b>Relación N:M:</b>
+    Un anime puede estar
+    en múltiples listas
+end note
+
 @enduml

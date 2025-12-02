@@ -1,0 +1,163 @@
+@startuml
+title Diagrama de Clases - Utilidades y Estrategias
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
+}
+
+package "utilidad" {
+    
+    interface CriterioOrdenamiento <<interface>> {
+        +comparar(a1: AnimeBase, a2: AnimeBase): int
+        +obtenerDescripcion(): String
+        +esAscendente(): boolean
+        +invertir(): CriterioOrdenamiento
+    }
+    
+    note top of CriterioOrdenamiento
+        <b>Patrón Strategy:</b>
+        Define una familia de algoritmos
+        de ordenamiento intercambiables
+    end note
+    
+    class OrdenamientoPorTitulo {
+        -ascendente: boolean
+        --
+        +OrdenamientoPorTitulo()
+        +OrdenamientoPorTitulo(ascendente: boolean)
+        +comparar(a1, a2): int
+        +obtenerDescripcion(): String
+    }
+    
+    class OrdenamientoPorCalificacion {
+        -ascendente: boolean
+        --
+        +OrdenamientoPorCalificacion()
+        +OrdenamientoPorCalificacion(ascendente: boolean)
+        +comparar(a1, a2): int
+        +obtenerDescripcion(): String
+    }
+    
+    class OrdenamientoPorAnio {
+        -ascendente: boolean
+        --
+        +OrdenamientoPorAnio()
+        +OrdenamientoPorAnio(ascendente: boolean)
+        +comparar(a1, a2): int
+        +obtenerDescripcion(): String
+    }
+    
+    ' === Criterios de Recomendación ===
+    
+    interface CriterioRecomendacion <<interface>> {
+        +recomendar(animes: List<AnimeBase>, cantidad: int): List<AnimeBase>
+        +obtenerNombre(): String
+        +obtenerDescripcion(): String
+    }
+    
+    note top of CriterioRecomendacion
+        <b>SOLID - OCP:</b>
+        Abierto para extensión,
+        cerrado para modificación.
+        Nuevos criterios se agregan
+        sin cambiar código existente.
+    end note
+    
+    class RecomendacionTopGlobal {
+        --
+        +recomendar(animes, cantidad): List<AnimeBase>
+        +obtenerNombre(): String
+        +obtenerDescripcion(): String
+        --
+        -filtrarCalificados(animes): List<AnimeBase>
+        -ordenarPorCalificacion(animes): List<AnimeBase>
+    }
+    
+    class RecomendacionTopPorGenero {
+        -genero: Genero
+        --
+        +RecomendacionTopPorGenero(genero: Genero)
+        +recomendar(animes, cantidad): List<AnimeBase>
+        +obtenerNombre(): String
+        +obtenerDescripcion(): String
+        --
+        -filtrarPorGenero(animes): List<AnimeBase>
+    }
+    
+    class RecomendacionPorEstado {
+        -estado: Estado
+        --
+        +RecomendacionPorEstado(estado: Estado)
+        +recomendar(animes, cantidad): List<AnimeBase>
+        +obtenerNombre(): String
+        +obtenerDescripcion(): String
+        --
+        -filtrarPorEstado(animes): List<AnimeBase>
+    }
+    
+    ' === Filtro Builder ===
+    
+    class FiltroAnime {
+        -titulo: String
+        -anioDesde: Integer
+        -anioHasta: Integer
+        -genero: Genero
+        -estado: Estado
+        -calificacionMinima: Integer
+        -soloCalificados: boolean
+        --
+        +FiltroAnime()
+        +porTitulo(titulo: String): FiltroAnime
+        +porRangoAnios(desde: Integer, hasta: Integer): FiltroAnime
+        +porGenero(genero: Genero): FiltroAnime
+        +porEstado(estado: Estado): FiltroAnime
+        +porCalificacionMinima(minima: Integer): FiltroAnime
+        +soloCalificados(): FiltroAnime
+        +construir(): Predicate<AnimeBase>
+        --
+        -crearPredicadoTitulo(): Predicate<AnimeBase>
+        -crearPredicadoAnio(): Predicate<AnimeBase>
+        -crearPredicadoGenero(): Predicate<AnimeBase>
+        -crearPredicadoEstado(): Predicate<AnimeBase>
+        -crearPredicadoCalificacion(): Predicate<AnimeBase>
+    }
+    
+    note bottom of FiltroAnime
+        <b>Patrón Builder:</b>
+        Permite construir objetos
+        Predicate complejos paso a paso
+        con una interfaz fluida
+    end note
+}
+
+' Relaciones de implementación
+OrdenamientoPorTitulo ..|> CriterioOrdenamiento
+OrdenamientoPorCalificacion ..|> CriterioOrdenamiento
+OrdenamientoPorAnio ..|> CriterioOrdenamiento
+
+RecomendacionTopGlobal ..|> CriterioRecomendacion
+RecomendacionTopPorGenero ..|> CriterioRecomendacion
+RecomendacionPorEstado ..|> CriterioRecomendacion
+
+' Dependencias con modelo
+RecomendacionTopPorGenero ..> Genero : usa
+RecomendacionPorEstado ..> Estado : usa
+FiltroAnime ..> Genero : usa
+FiltroAnime ..> Estado : usa
+
+note as N1
+    <b>GRASP - Polymorphism:</b>
+    Comportamiento variable se logra
+    mediante polimorfismo en lugar
+    de condicionales.
+    
+    <b>GRASP - Protected Variations:</b>
+    Las interfaces protegen a los
+    servicios de cambios en los
+    algoritmos concretos.
+end note
+
+@enduml
+

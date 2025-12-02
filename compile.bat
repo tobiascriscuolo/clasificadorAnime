@@ -1,18 +1,24 @@
 @echo off
+chcp 65001 >nul
 echo ======================================
 echo  Compilando Sistema de Anime
 echo ======================================
-
-:: Crear directorio de salida
-if not exist "out" mkdir out
-
-:: Compilar todos los archivos Java
 echo Compilando archivos Java...
-javac -d out -sourcepath src src\ui\MainFrame.java
 
-if %ERRORLEVEL% NEQ 0 (
+if not exist out mkdir out
+if not exist out\data mkdir out\data
+
+javac -encoding UTF-8 -d out ^
+    src\excepcion\*.java ^
+    src\modelo\*.java ^
+    src\repositorio\*.java ^
+    src\servicio\*.java ^
+    src\utilidad\*.java ^
+    src\vista\*.java
+
+if %errorlevel% neq 0 (
     echo.
-    echo ERROR: La compilacion fallo.
+    echo ERROR: La compilacion fallo
     pause
     exit /b 1
 )
@@ -20,15 +26,9 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo Compilacion exitosa!
 echo.
-
-:: Preguntar si ejecutar
-set /p RUN="Desea ejecutar la aplicacion? (S/N): "
-if /i "%RUN%"=="S" (
-    echo.
-    echo Iniciando aplicacion...
-    cd out
-    java ui.MainFrame
+set /p ejecutar=Desea ejecutar la aplicacion? (S/N): 
+if /i "%ejecutar%"=="S" (
+    java -cp out vista.VentanaPrincipal
 )
 
 pause
-

@@ -1,28 +1,80 @@
 @startuml
-title Aplicar Filtro y Mostrar Resultados
-skinparam monochrome true
+title Diagrama de Secuencia - Aplicar Filtro y Búsqueda
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #7B68EE
+    LifeLineBorderColor #9370DB
+    ParticipantBackgroundColor #F5F5FF
+    ParticipantBorderColor #9370DB
+    ActorBorderColor #7B68EE
+}
 
 actor Usuario
-participant "AnimePanel" as Panel
-participant "FiltroAnime" as Filtro
-participant "AnimeService" as Service
+participant "PanelAnime" as Panel <<vista>>
+participant "FiltroAnime" as Filtro <<utilidad>>
+participant "ServicioAnime" as Servicio <<servicio>>
+participant "RepositorioAnime" as Repo <<repositorio>>
 
-Usuario -> Panel: Selecciona genero "Shonen"
-Usuario -> Panel: Calificacion minima: 4
-Usuario -> Panel: Clic "Buscar"
+== Configurar Filtros ==
+Usuario -> Panel: Escribe "Naruto" en campo título
+Usuario -> Panel: Selecciona género "SHONEN"
+Usuario -> Panel: Establece calificación mínima: 4
+Usuario -> Panel: Selecciona estado "FINALIZADO"
+Usuario -> Panel: Clic botón "Buscar"
 
+== Construcción del Filtro (Builder Pattern) ==
+activate Panel
 Panel -> Filtro: new FiltroAnime()
-Panel -> Filtro: porGenero(SHONEN)
+activate Filtro
+
+note right of Filtro
+    <b>Patrón Builder:</b>
+    Construye un filtro complejo
+    paso a paso con interfaz fluida
+end note
+
+Panel -> Filtro: porTitulo("Naruto")
+Filtro --> Panel: FiltroAnime (this)
+
+Panel -> Filtro: porGenero(Genero.SHONEN)
+Filtro --> Panel: FiltroAnime (this)
+
 Panel -> Filtro: porCalificacionMinima(4)
-Panel -> Filtro: build()
-Filtro --> Panel: Predicate
+Filtro --> Panel: FiltroAnime (this)
 
-Panel -> Service: busquedaAvanzada(filtro)
-activate Service
-Service -> Service: findAll().filter(predicate)
-Service --> Panel: List<AnimeBase>
-deactivate Service
+Panel -> Filtro: porEstado(Estado.FINALIZADO)
+Filtro --> Panel: FiltroAnime (this)
 
-Panel -> Panel: actualizar tabla
-Panel --> Usuario: Muestra resultados filtrados
+Panel -> Filtro: construir()
+Filtro -> Filtro: combinarPredicados()
+Filtro --> Panel: Predicate<AnimeBase>
+deactivate Filtro
+
+== Ejecutar Búsqueda ==
+Panel -> Servicio: busquedaAvanzada(filtro)
+activate Servicio
+
+Servicio -> Repo: obtenerTodos()
+activate Repo
+Repo --> Servicio: List<AnimeBase>
+deactivate Repo
+
+Servicio -> Servicio: animes.stream()\n  .filter(predicado)\n  .collect(toList())
+
+note right of Servicio
+    <b>GRASP - Information Expert:</b>
+    AnimeBase sabe cómo evaluarse
+    contra cada criterio del filtro
+end note
+
+Servicio --> Panel: List<AnimeBase> filtrados
+deactivate Servicio
+
+== Mostrar Resultados ==
+Panel -> Panel: actualizarModeloTabla(resultados)
+Panel -> Panel: refrescarVista()
+Panel --> Usuario: Muestra N resultados encontrados
+
+deactivate Panel
+
 @enduml

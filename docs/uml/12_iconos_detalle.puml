@@ -1,0 +1,121 @@
+@startuml
+title Diagrama de Clases - Iconos Personalizados (Detalle)
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
+}
+
+interface "javax.swing.Icon" as Icon {
+    +paintIcon(Component c, Graphics g, int x, int y): void
+    +getIconWidth(): int
+    +getIconHeight(): int
+}
+
+package "vista - Iconos Personalizados" {
+    
+    class IconoMas <<Icon>> #90EE90 {
+        BOTON: Nueva Serie / Nueva Pelicula
+        ==
+        -tamanio: int
+        -color: Color
+        --
+        +IconoMas(tamanio: int, color: Color)
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja circulo verde
+        con simbolo + blanco
+    }
+    
+    class IconoLapiz <<Icon>> #FFE4B5 {
+        BOTON: Editar
+        ==
+        -tamanio: int
+        -color: Color
+        --
+        +IconoLapiz(tamanio: int, color: Color)
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja lapiz naranja
+        inclinado con punta
+    }
+    
+    class IconoCruz <<Icon>> #FFB6C1 {
+        BOTON: Eliminar
+        ==
+        -tamanio: int
+        -color: Color
+        --
+        +IconoCruz(tamanio: int, color: Color)
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja circulo rojo
+        con simbolo X blanco
+    }
+    
+    class IconoEstrella <<Icon>> #FFD700 {
+        BOTON: Calificar
+        ==
+        -tamanio: int
+        -color: Color
+        --
+        +IconoEstrella(tamanio: int, color: Color)
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja estrella de 5
+        puntas amarilla/dorada
+    }
+}
+
+' Implementaciones
+IconoMas ..|> Icon
+IconoLapiz ..|> Icon
+IconoCruz ..|> Icon
+IconoEstrella ..|> Icon
+
+note bottom of IconoMas
+    Uso en PanelAnime:
+    btnNuevaSerie.setIcon(new IconoMas(18, color));
+    btnNuevaPelicula.setIcon(new IconoMas(18, color));
+end note
+
+note bottom of IconoLapiz
+    Uso en PanelAnime:
+    btnEditar.setIcon(new IconoLapiz(18, color));
+end note
+
+note bottom of IconoCruz
+    Uso en PanelAnime:
+    btnEliminar.setIcon(new IconoCruz(18, color));
+end note
+
+note bottom of IconoEstrella
+    Uso en PanelAnime:
+    btnCalificar.setIcon(new IconoEstrella(18, color));
+    
+    Tambien usado en pestanas
+    del JTabbedPane
+end note
+
+note as N1
+    BARRA DE HERRAMIENTAS:
+    [+] Nueva Serie (verde)
+    [+] Nueva Pelicula (verde)
+    [lapiz] Editar (naranja)
+    [X] Eliminar (rojo)
+    [estrella] Calificar (amarillo)
+    
+    Los iconos son vectoriales
+    dibujados con Graphics2D
+end note
+
+@enduml

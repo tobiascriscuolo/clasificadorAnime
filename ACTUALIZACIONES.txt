@@ -33,3 +33,7 @@ Código sin Java 8: Se reemplazaron TODOS los streams, lambdas, Optional y Predi
 
 Exportar/Importar TXT: Se agregó funcionalidad para exportar el catálogo a archivo TXT (Archivo > Exportar) e importar desde TXT (Archivo > Importar). Al importar, si hay duplicados, se pregunta uno por uno si cambiar el título o no importar.
 
+Catálogo de ejemplo: Se creó catalogo_importar.txt con 15 animes (12 series + 3 películas) listos para importar con Ctrl+I. Incluye Attack on Titan, Death Note, Demon Slayer, Your Name, etc.
+
+Manual de usuario: Se creó MANUAL_USUARIO.txt con guía completa de la aplicación - pestañas, menús, formato de importación TXT, géneros, estados, atajos de teclado.
+

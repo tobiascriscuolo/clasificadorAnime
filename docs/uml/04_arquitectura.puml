@@ -1,36 +1,104 @@
 @startuml
-title Arquitectura por Capas
-skinparam monochrome true
-
-package "UI (Presentacion)" {
-  [MainFrame]
-  [AnimePanel]
-  [ListasPanel]
+title Arquitectura MVC por Capas
+skinparam backgroundColor #FEFEFE
+skinparam component {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
+}
+skinparam package {
+    BackgroundColor #FAFAFA
+    BorderColor #7B68EE
 }
 
-package "Services (Logica)" {
-  [AnimeService]
-  [ListaService]
-  [RecomendacionService]
+package "VISTA (Presentación)" #E8E8FF {
+    [VentanaPrincipal] as VP
+    [PanelAnime] as PA
+    [PanelListas] as PL
+    [PanelRecomendaciones] as PR
+    [PanelEstadisticas] as PE
+    [DialogoAnimeSerie] as DAS
+    [DialogoAnimePelicula] as DAP
 }
 
-package "Repository (Persistencia)" {
-  interface IAnimeRepository
-  [FileAnimeRepository]
+package "SERVICIO (Lógica de Negocio)" #FFE8FF {
+    [ServicioAnime] as SA
+    [ServicioListaPersonalizada] as SLP
+    [ServicioRecomendacion] as SR
+    [ServicioEstadisticas] as SE
 }
 
-package "Model (Dominio)" {
-  [AnimeBase]
-  [ListaPersonalizada]
+package "REPOSITORIO (Persistencia)" #E8FFE8 {
+    interface "RepositorioAnime" as RA
+    interface "RepositorioListaPersonalizada" as RLP
+    [RepositorioAnimeArchivo] as RAA
+    [RepositorioListaPersonalizadaArchivo] as RLPA
 }
 
-[MainFrame] --> [AnimeService]
-[AnimeService] --> IAnimeRepository
-[FileAnimeRepository] ..|> IAnimeRepository
+package "MODELO (Dominio)" #FFFFE8 {
+    [AnimeBase]
+    [AnimeSerie]
+    [AnimePelicula]
+    [ListaPersonalizada]
+    [Estado / Genero / TipoAnime] as Enums
+}
 
-note right of IAnimeRepository
-  SOLID - DIP:
-  Services dependen
-  de interfaces
+package "UTILIDAD (Estrategias)" #FFE8E8 {
+    [CriterioOrdenamiento]
+    [CriterioRecomendacion]
+    [FiltroAnime]
+}
+
+' Relaciones Vista -> Servicio
+VP --> SA
+VP --> SLP
+VP --> SR
+VP --> SE
+
+PA --> SA
+PA --> SLP
+PL --> SLP
+PL --> SA
+PR --> SR
+PE --> SE
+
+' Relaciones Servicio -> Repositorio
+SA --> RA
+SLP --> RLP
+SLP --> RA
+SR --> RA
+SE --> RA
+
+' Implementaciones
+RAA ..|> RA : implementa
+RLPA ..|> RLP : implementa
+
+' Servicio -> Utilidad
+SA --> FiltroAnime
+SA --> CriterioOrdenamiento
+SR --> CriterioRecomendacion
+
+' Repositorio -> Modelo
+RAA --> AnimeBase
+RLPA --> ListaPersonalizada
+
+note right of RA
+    <b>SOLID - DIP:</b>
+    Los servicios dependen de
+    interfaces (abstracciones),
+    no de implementaciones
 end note
+
+note bottom of SA
+    <b>GRASP - Controller:</b>
+    Coordina los casos de uso
+    y delega al repositorio
+end note
+
+note left of RAA
+    <b>GRASP - Pure Fabrication:</b>
+    Clase técnica que no representa
+    un concepto del dominio pero
+    mejora la cohesión
+end note
+
 @enduml

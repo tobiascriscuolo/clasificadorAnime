@@ -1,16 +1,17 @@
 @echo off
+chcp 65001 >nul
 title Clasificador de Anime
 
 :: Ir al directorio del proyecto
 cd /d "%~dp0"
 
 :: Verificar si está compilado
-if not exist "out\ui\MainFrame.class" (
+if not exist "out\vista\VentanaPrincipal.class" (
     echo.
     echo La aplicacion no esta compilada. Compilando...
     echo.
     if not exist "out" mkdir out
-    javac -source 8 -target 8 -d out -sourcepath src src\ui\MainFrame.java
+    javac -encoding UTF-8 -d out src\excepcion\*.java src\modelo\*.java src\repositorio\*.java src\servicio\*.java src\utilidad\*.java src\vista\*.java
     if errorlevel 1 (
         echo.
         echo ERROR: No se pudo compilar. Verifica que Java este instalado.
@@ -23,6 +24,4 @@ if not exist "out\ui\MainFrame.class" (
 
 :: Ejecutar la aplicacion
 cd out
-start "" javaw ui.MainFrame
-
-
+start "" javaw vista.VentanaPrincipal

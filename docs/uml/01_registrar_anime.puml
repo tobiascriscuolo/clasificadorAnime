@@ -1,31 +1,97 @@
 @startuml
-title Registrar Nuevo Anime
-skinparam monochrome true
+title Diagrama de Secuencia - Registrar Nuevo Anime
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #7B68EE
+    LifeLineBorderColor #9370DB
+    ParticipantBackgroundColor #F5F5FF
+    ParticipantBorderColor #9370DB
+    ActorBorderColor #7B68EE
+}
 
 actor Usuario
-participant "AnimePanel" as UI
-participant "AnimeService" as Service
-participant "AnimeRepository" as Repo
+participant "PanelAnime" as UI <<vista>>
+participant "ServicioAnime" as Servicio <<servicio>>
+participant "RepositorioAnime" as Repo <<repositorio>>
+entity "AnimeSerie" as Anime <<modelo>>
 
-Usuario -> UI: Clic "Nueva Serie"
-UI -> UI: Muestra formulario
-Usuario -> UI: Completa datos
+== Abrir Diálogo ==
+Usuario -> UI: Clic botón <color:green><b>[+]</b></color> (Nueva Serie)
+activate UI
+
+note right of UI
+    <color:green><b>IconoMas</b></color>
+    Botón verde con "+"
+    para crear nueva serie
+end note
+
+UI -> UI: mostrarDialogoNuevaSerie()
+UI --> Usuario: Muestra formulario vacío
+deactivate UI
+
+== Completar Datos ==
+Usuario -> UI: Ingresa título, año, estudio...
+Usuario -> UI: Selecciona géneros
+Usuario -> UI: Indica cantidad de capítulos
 Usuario -> UI: Clic "Guardar"
 
-UI -> Service: registrarSerie(titulo, anio, ...)
-activate Service
+== Proceso de Registro ==
+activate UI
+UI -> Servicio: registrarSerie(titulo, anio, estudio, capitulos, generos, enEmision)
+activate Servicio
 
-Service -> Service: validarTitulo()
-Service -> Service: validarAnio()
-Service -> Repo: existsByTitulo(titulo)
-Repo --> Service: false
+note right of Servicio
+    <b>GRASP - Creator:</b>
+    El servicio tiene la información
+    necesaria para crear el anime
+end note
 
-Service -> Service: new AnimeSerie(...)
-Service -> Repo: save(anime)
-Repo --> Service: void
+Servicio -> Servicio: validarDatos()
+alt datos inválidos
+    Servicio --> UI: lanza ExcepcionValidacion
+    UI --> Usuario: Muestra mensaje de error
+else datos válidos
+    Servicio -> Repo: existePorTitulo(titulo)
+    activate Repo
+    Repo --> Servicio: false
+    deactivate Repo
+    
+    alt anime ya existe
+        Servicio --> UI: lanza ExcepcionAnimeYaExistente
+        UI --> Usuario: "El anime ya existe"
+    else no existe
+        create Anime
+        Servicio -> Anime: new AnimeSerie(titulo, anio, estudio, capitulos, generos, enEmision)
+        
+        Servicio -> Repo: guardar(anime)
+        activate Repo
+        Repo -> Repo: agregarACache(anime)
+        Repo -> Repo: persistirEnArchivo()
+        Repo --> Servicio: void
+        deactivate Repo
+        
+        Servicio --> UI: AnimeSerie creada
+        deactivate Servicio
+        
+        UI -> UI: actualizarTabla()
+        UI --> Usuario: "Serie registrada correctamente"
+    end
+end
 
-Service --> UI: AnimeSerie creada
-deactivate Service
+deactivate UI
 
-UI -> Usuario: "Serie creada correctamente"
+== Registrar Nueva Película ==
+Usuario -> UI: Clic botón <color:green><b>[+]</b></color> (Nueva Película)
+activate UI
+
+note right of UI
+    <color:green><b>IconoMas</b></color>
+    Otro botón verde con "+"
+    para crear nueva película
+end note
+
+UI -> UI: mostrarDialogoNuevaPelicula()
+UI --> Usuario: Muestra formulario de película
+deactivate UI
+
 @enduml

@@ -1,36 +1,101 @@
 @startuml
-title Obtener Recomendaciones (Strategy Pattern)
-skinparam monochrome true
+title Diagrama de Secuencia - Obtener Recomendaciones (Strategy Pattern)
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #7B68EE
+    LifeLineBorderColor #9370DB
+    ParticipantBackgroundColor #F5F5FF
+    ParticipantBorderColor #9370DB
+    ActorBorderColor #7B68EE
+}
 
 actor Usuario
-participant "RecomendacionesPanel" as Panel
-participant "RecomendacionService" as Service
-participant "CriterioRecomendacion" as Criterio
+participant "PanelRecomendaciones" as Panel <<vista>>
+participant "ServicioRecomendacion" as Servicio <<servicio>>
+participant "CriterioRecomendacion" as Criterio <<interfaz>>
+participant "RecomendacionTopPorGenero" as TopGenero <<utilidad>>
+participant "RepositorioAnime" as Repo <<repositorio>>
 
-Usuario -> Panel: Selecciona "Top por Genero"
-Usuario -> Panel: Genero: SHONEN, Cantidad: 5
-Usuario -> Panel: Clic "Obtener"
+== Seleccionar Criterio ==
+Usuario -> Panel: Selecciona tipo "Top por Género"
+Usuario -> Panel: Elige género: SHONEN
+Usuario -> Panel: Establece cantidad: 5
+Usuario -> Panel: Clic "Obtener Recomendaciones"
 
-Panel -> Service: getTopPorGenero(SHONEN, 5)
-activate Service
+== Proceso de Recomendación ==
+activate Panel
+Panel -> Servicio: obtenerTopPorGenero(Genero.SHONEN, 5)
+activate Servicio
 
-Service -> Criterio: new TopPorGenero(SHONEN)
-Service -> Criterio: recomendar(animes, 5)
-activate Criterio
-
-note right of Criterio
-  Strategy Pattern:
-  Algoritmo intercambiable
+note right of Servicio
+    <b>Patrón Strategy:</b>
+    El algoritmo de recomendación
+    es intercambiable en tiempo
+    de ejecución
 end note
 
-Criterio -> Criterio: filtrar por genero
-Criterio -> Criterio: ordenar por calificacion
-Criterio -> Criterio: limit(5)
-Criterio --> Service: List<AnimeBase>
-deactivate Criterio
+Servicio -> TopGenero: new RecomendacionTopPorGenero(SHONEN)
+activate TopGenero
 
-Service --> Panel: Top 5 Shonen
-deactivate Service
+Servicio -> Repo: obtenerTodos()
+activate Repo
+Repo --> Servicio: List<AnimeBase> todosLosAnimes
+deactivate Repo
 
-Panel --> Usuario: Muestra resultados
+Servicio -> TopGenero: recomendar(todosLosAnimes, 5)
+
+note right of TopGenero
+    <b>SOLID - OCP:</b>
+    Nuevos criterios de recomendación
+    se agregan sin modificar código
+    existente
+end note
+
+TopGenero -> TopGenero: filtrarPorGenero(SHONEN)
+TopGenero -> TopGenero: filtrarSoloCalificados()
+TopGenero -> TopGenero: ordenarPorCalificacionDesc()
+TopGenero -> TopGenero: limit(5)
+
+TopGenero --> Servicio: List<AnimeBase> top5Shonen
+deactivate TopGenero
+
+Servicio --> Panel: List<AnimeBase> recomendaciones
+deactivate Servicio
+
+== Mostrar Resultados ==
+Panel -> Panel: actualizarTablaRecomendaciones(recomendaciones)
+Panel -> Panel: mostrarCriterioUsado("Top 5 Shonen mejor calificados")
+Panel --> Usuario: Muestra lista de recomendaciones
+
+deactivate Panel
+
+== Alternativa: Cambiar Estrategia ==
+Usuario -> Panel: Cambia a "Top Global"
+Usuario -> Panel: Clic "Obtener Recomendaciones"
+
+activate Panel
+Panel -> Servicio: obtenerTopGlobal(10)
+activate Servicio
+
+create "RecomendacionTopGlobal" as TopGlobal <<utilidad>>
+Servicio -> TopGlobal: new RecomendacionTopGlobal()
+
+Servicio -> TopGlobal: recomendar(animes, 10)
+activate TopGlobal
+
+note right of TopGlobal
+    <b>GRASP - Polymorphism:</b>
+    Diferentes estrategias implementan
+    la misma interfaz CriterioRecomendacion
+end note
+
+TopGlobal --> Servicio: List<AnimeBase> top10Global
+deactivate TopGlobal
+
+Servicio --> Panel: List<AnimeBase>
+deactivate Servicio
+
+Panel --> Usuario: Muestra Top 10 Global
+deactivate Panel
+
 @enduml

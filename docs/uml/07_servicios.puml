@@ -1,46 +1,169 @@
 @startuml
-title Diagrama de Clases - Servicios
-skinparam monochrome true
-
-interface AnimeRepository {
-  +save(AnimeBase): void
-  +findByTitulo(String): Optional
-  +findAll(): List
-  +deleteByTitulo(String): boolean
-  +existsByTitulo(String): boolean
+title Diagrama de Clases - Servicios y Repositorios
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
 }
 
-class FileAnimeRepository {
-  -filePath: String
-  -cache: List<AnimeBase>
-  +save(AnimeBase): void
-  +findAll(): List
+package "repositorio" {
+    
+    interface RepositorioAnime <<interface>> {
+        +guardar(anime: AnimeBase): void
+        +guardarTodos(animes: List<AnimeBase>): void
+        +buscarPorTitulo(titulo: String): AnimeBase
+        +obtenerTodos(): List<AnimeBase>
+        +eliminarPorTitulo(titulo: String): boolean
+        +eliminar(anime: AnimeBase): boolean
+        +existePorTitulo(titulo: String): boolean
+        +contar(): int
+        +eliminarTodos(): void
+    }
+    
+    interface RepositorioListaPersonalizada <<interface>> {
+        +guardar(lista: ListaPersonalizada): void
+        +guardarTodas(listas: List<ListaPersonalizada>): void
+        +buscarPorNombre(nombre: String): ListaPersonalizada
+        +obtenerTodas(): List<ListaPersonalizada>
+        +eliminarPorNombre(nombre: String): boolean
+        +existePorNombre(nombre: String): boolean
+        +contar(): int
+    }
+    
+    class RepositorioAnimeArchivo {
+        -rutaArchivo: String
+        -cache: List<AnimeBase>
+        -cacheCargada: boolean
+        --
+        -cargarSiNecesario(): void
+        -cargar(): void
+        -persistir(): void
+        -buscarEnCache(titulo: String): AnimeBase
+        +invalidarCache(): void
+    }
+    
+    class RepositorioListaPersonalizadaArchivo {
+        -rutaArchivo: String
+        -cache: List<ListaPersonalizada>
+        -cacheCargada: boolean
+        --
+        -cargarSiNecesario(): void
+        -cargar(): void
+        -persistir(): void
+        -buscarEnCache(nombre: String): ListaPersonalizada
+        +invalidarCache(): void
+    }
 }
 
-class AnimeService {
-  -animeRepository: AnimeRepository
-  +registrarSerie(...): AnimeSerie
-  +registrarPelicula(...): AnimePelicula
-  +actualizarAnime(...): void
-  +eliminarAnime(String): boolean
-  +buscarPorTitulo(String): List
-  +filtrarPorGenero(Genero): List
+package "servicio" {
+    
+    class ServicioAnime {
+        -repositorioAnime: RepositorioAnime
+        --
+        +registrarSerie(titulo, anio, estudio, capitulos, generos, enEmision): AnimeSerie
+        +registrarPelicula(titulo, anio, estudio, duracion, generos, director): AnimePelicula
+        +actualizarAnime(tituloOriginal, nuevoTitulo, anio, estudio, estado, calificacion, generos): void
+        +calificarAnime(titulo: String, calificacion: int): void
+        +cambiarEstado(titulo: String, estado: Estado): void
+        +eliminarAnime(titulo: String): boolean
+        +listarTodos(): List<AnimeBase>
+        +buscarPorTituloExacto(titulo: String): AnimeBase
+        --
+        +buscarPorTitulo(texto: String): List<AnimeBase>
+        +buscarPorRangoAnios(desde: int, hasta: int): List<AnimeBase>
+        +filtrarPorGenero(genero: Genero): List<AnimeBase>
+        +filtrarPorEstado(estado: Estado): List<AnimeBase>
+        +filtrarPorCalificacionMinima(minima: int): List<AnimeBase>
+        +busquedaAvanzada(filtro: FiltroAnime): List<AnimeBase>
+        --
+        +ordenar(animes: List, criterio: CriterioOrdenamiento): List<AnimeBase>
+        +listarOrdenadosPorTitulo(): List<AnimeBase>
+        +listarOrdenadosPorCalificacion(): List<AnimeBase>
+        +listarOrdenadosPorAnio(): List<AnimeBase>
+        --
+        +exportarATxt(): String
+        +parsearLineaAnime(linea: String): AnimeBase
+        +registrarAnimeDirecto(anime: AnimeBase): boolean
+    }
+    
+    class ServicioListaPersonalizada {
+        -repositorioLista: RepositorioListaPersonalizada
+        -repositorioAnime: RepositorioAnime
+        --
+        +crearLista(nombre: String, descripcion: String): ListaPersonalizada
+        +agregarAnimeALista(nombreLista: String, tituloAnime: String): boolean
+        +removerAnimeDeLista(nombreLista: String, tituloAnime: String): boolean
+        +listarTodas(): List<ListaPersonalizada>
+        +buscarListaPorNombre(nombre: String): ListaPersonalizada
+        +eliminarLista(nombre: String): boolean
+        +actualizarLista(nombreOriginal, nuevoNombre, nuevaDescripcion): void
+        +obtenerAnimesDeListat(nombreLista: String): List<AnimeBase>
+        +animeEstaEnLista(nombreLista: String, tituloAnime: String): boolean
+        +obtenerListasConAnime(tituloAnime: String): List<ListaPersonalizada>
+        +contarListas(): int
+    }
+    
+    class ServicioRecomendacion {
+        -repositorioAnime: RepositorioAnime
+        --
+        +obtenerRecomendaciones(criterio: CriterioRecomendacion, cantidad: int): List<AnimeBase>
+        +obtenerTopGlobal(cantidad: int): List<AnimeBase>
+        +obtenerTopPorGenero(genero: Genero, cantidad: int): List<AnimeBase>
+        +obtenerTopPorEstado(estado: Estado, cantidad: int): List<AnimeBase>
+        +obtenerRecomendacionesAvanzadas(genero, calificacionMin, estado, cantidad): List<AnimeBase>
+    }
+    
+    class ServicioEstadisticas {
+        -repositorioAnime: RepositorioAnime
+        --
+        +obtenerPromedioCalificacionGlobal(): double
+        +obtenerPromedioCalificacionPorGenero(genero: Genero): double
+        +obtenerPromediosCalificacionPorGenero(): Map<Genero, Double>
+        +obtenerCantidadPorEstado(): Map<Estado, Long>
+        +obtenerTop3GenerosMasFrecuentes(): List<Entry<Genero, Long>>
+        +obtenerDistribucionGeneros(): Map<Genero, Long>
+        +obtenerResumenEstadisticas(): ResumenEstadisticas
+    }
+    
+    class "ServicioEstadisticas.ResumenEstadisticas" as RE {
+        -totalAnimes: int
+        -animesCalificados: int
+        -promedioCalificacion: double
+        -cantidadPorEstado: Map<Estado, Long>
+        -topGeneros: List<Entry<Genero, Long>>
+        -animeMasAntiguo: AnimeBase
+        -animeMasNuevo: AnimeBase
+        -animeMejorCalificado: AnimeBase
+    }
 }
 
-class EstadisticasService {
-  -animeRepository: AnimeRepository
-  +getPromedioGlobal(): double
-  +getPromedioPorGenero(Genero): double
-  +getCantidadPorEstado(): Map
-  +getTop3Generos(): List
-}
+' Implementaciones
+RepositorioAnimeArchivo ..|> RepositorioAnime
+RepositorioListaPersonalizadaArchivo ..|> RepositorioListaPersonalizada
 
-FileAnimeRepository ..|> AnimeRepository
-AnimeService --> AnimeRepository
-EstadisticasService --> AnimeRepository
+' Dependencias de servicios
+ServicioAnime --> RepositorioAnime : usa
+ServicioListaPersonalizada --> RepositorioListaPersonalizada : usa
+ServicioListaPersonalizada --> RepositorioAnime : usa
+ServicioRecomendacion --> RepositorioAnime : usa
+ServicioEstadisticas --> RepositorioAnime : usa
 
-note bottom of AnimeService
-  GRASP Controller:
-  Coordina casos de uso
+ServicioEstadisticas +-- RE
+
+note bottom of ServicioAnime
+    <b>GRASP - Controller:</b>
+    Coordina casos de uso de anime
+    
+    <b>GRASP - Creator:</b>
+    Crea instancias de AnimeSerie
+    y AnimePelicula
 end note
+
+note right of RepositorioAnime
+    <b>SOLID - DIP:</b>
+    Servicios dependen de
+    la abstracción (interfaz)
+end note
+
 @enduml

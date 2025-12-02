@@ -101,7 +101,10 @@ public class RecomendacionesPanel extends JPanel {
         cm.getColumn(2).setPreferredWidth(60);  // Año
         cm.getColumn(3).setPreferredWidth(150); // Géneros
         cm.getColumn(4).setPreferredWidth(80);  // Estado
-        cm.getColumn(5).setPreferredWidth(80);  // Calificación
+        cm.getColumn(5).setPreferredWidth(100);  // Calificación
+        
+        // Renderer de estrellas amarillas para la columna de calificación
+        cm.getColumn(5).setCellRenderer(new StarRatingRenderer());
         
         JScrollPane scrollResultados = new JScrollPane(tablaResultados);
         panelResultados.add(scrollResultados, BorderLayout.CENTER);
@@ -237,17 +240,9 @@ public class RecomendacionesPanel extends JPanel {
                 case 2: return a.getAnioLanzamiento();
                 case 3: return formatearGeneros(a.getGeneros());
                 case 4: return a.getEstado().getDescripcion();
-                case 5: return repetirCaracter('★', a.getCalificacion());
+                case 5: return a.tieneCalificacion() ? a.getCalificacion() : 0;
                 default: return "";
             }
-        }
-        
-        private String repetirCaracter(char c, int veces) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < veces; i++) {
-                sb.append(c);
-            }
-            return sb.toString();
         }
         
         private String formatearGeneros(Set<Genero> generos) {
@@ -262,6 +257,93 @@ public class RecomendacionesPanel extends JPanel {
                 count++;
             }
             return sb.toString();
+        }
+    }
+    
+    /**
+     * Renderer para mostrar calificaciones como estrellas amarillas.
+     */
+    static class StarRatingRenderer extends JPanel implements TableCellRenderer {
+        private int calificacion = 0;
+        private static final Color STAR_FILLED = new Color(255, 200, 50);   // Amarillo dorado
+        private static final Color STAR_EMPTY = new Color(200, 200, 200);   // Gris claro
+        private static final Color STAR_BORDER = new Color(180, 140, 20);   // Borde dorado oscuro
+        
+        public StarRatingRenderer() {
+            setOpaque(true);
+        }
+        
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            
+            if (value instanceof Integer) {
+                calificacion = (Integer) value;
+            } else if (value instanceof String && !"-".equals(value)) {
+                try {
+                    calificacion = Integer.parseInt((String) value);
+                } catch (NumberFormatException e) {
+                    calificacion = 0;
+                }
+            } else {
+                calificacion = 0;
+            }
+            
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+            } else {
+                setBackground(table.getBackground());
+            }
+            
+            return this;
+        }
+        
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            int starSize = 14;
+            int spacing = 2;
+            int totalWidth = 5 * starSize + 4 * spacing;
+            int startX = (getWidth() - totalWidth) / 2;
+            int startY = (getHeight() - starSize) / 2;
+            
+            for (int i = 0; i < 5; i++) {
+                int x = startX + i * (starSize + spacing);
+                if (i < calificacion) {
+                    drawStar(g2, x, startY, starSize, STAR_FILLED, STAR_BORDER);
+                } else {
+                    drawStar(g2, x, startY, starSize, STAR_EMPTY, new Color(160, 160, 160));
+                }
+            }
+            
+            g2.dispose();
+        }
+        
+        private void drawStar(Graphics2D g2, int x, int y, int size, Color fill, Color border) {
+            int[] xPoints = new int[10];
+            int[] yPoints = new int[10];
+            double angle = -Math.PI / 2;
+            double deltaAngle = Math.PI / 5;
+            int outerRadius = size / 2;
+            int innerRadius = size / 5;
+            int centerX = x + size / 2;
+            int centerY = y + size / 2;
+            
+            for (int i = 0; i < 10; i++) {
+                int radius = (i % 2 == 0) ? outerRadius : innerRadius;
+                xPoints[i] = centerX + (int)(radius * Math.cos(angle));
+                yPoints[i] = centerY + (int)(radius * Math.sin(angle));
+                angle += deltaAngle;
+            }
+            
+            g2.setColor(fill);
+            g2.fillPolygon(xPoints, yPoints, 10);
+            g2.setColor(border);
+            g2.setStroke(new BasicStroke(1f));
+            g2.drawPolygon(xPoints, yPoints, 10);
         }
     }
 }

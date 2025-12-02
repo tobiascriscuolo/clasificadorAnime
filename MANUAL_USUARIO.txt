@@ -1,0 +1,139 @@
+# MANUAL DE USUARIO
+# Sistema de Clasificación de Animé
+# ==================================
+
+================================================================================
+                              INICIO RÁPIDO
+================================================================================
+
+1. Ejecutar: Doble clic en ClasificadorAnime.bat
+2. La aplicación tiene 4 pestañas principales
+
+================================================================================
+                              PESTAÑAS
+================================================================================
+
+🎬 CATÁLOGO DE ANIMÉ
+--------------------
+- Ver todos los animes cargados en una tabla
+- Buscar por título (barra de búsqueda)
+- Filtrar por: Género, Estado, Calificación mínima
+- Ordenar por: Título, Calificación, Año
+- Botones: Nueva Serie, Nueva Película, Editar, Eliminar
+
+📋 LISTAS PERSONALIZADAS
+------------------------
+- Crear listas propias (ej: "Favoritos", "Para maratón")
+- Agregar/quitar animes de las listas
+- Un anime puede estar en varias listas
+- Botones: Nueva Lista, Agregar Anime, Quitar Anime, Eliminar Lista
+
+⭐ RECOMENDACIONES
+------------------
+- Top N Global: Los mejor calificados de todo el catálogo
+- Top N por Género: Los mejores de un género específico
+- Top N por Estado: Los mejores finalizados, por ver, etc.
+- Elegir cantidad (5, 10, 15, 20)
+
+📊 ESTADÍSTICAS
+---------------
+- Promedio de calificaciones (global y por género)
+- Cantidad de anime por estado
+- Géneros más frecuentes
+- Resumen general del catálogo
+
+================================================================================
+                           MENÚ ARCHIVO
+================================================================================
+
+Ctrl+S  →  Guardar cambios
+Ctrl+I  →  Importar desde TXT (cargar catálogo)
+Ctrl+E  →  Exportar a TXT (guardar catálogo como texto)
+Alt+F4  →  Salir
+
+================================================================================
+                        FORMATO DE IMPORTACIÓN TXT
+================================================================================
+
+Archivo: catalogo_importar.txt
+
+Formato de cada línea:
+TIPO|TITULO|AÑO|ESTUDIO|DURACION|GENEROS|ESTADO|CALIFICACION|EXTRA
+
+Donde:
+- TIPO: SERIE o PELICULA
+- DURACION: capítulos (serie) o minutos (película)
+- GENEROS: separados por coma (SHONEN,SEINEN,ISEKAI, etc.)
+- ESTADO: POR_VER, VIENDO, FINALIZADO, ABANDONADO
+- CALIFICACION: 1-5 (0 = sin calificar)
+- EXTRA: 
+  - Series: true/false (en emisión)
+  - Películas: nombre del director
+
+Ejemplo serie:
+SERIE|Attack on Titan|2013|Wit Studio|94|SHONEN,SEINEN|FINALIZADO|5|false
+
+Ejemplo película:
+PELICULA|Your Name|2016|CoMix Wave Films|107|SHOJO|FINALIZADO|5|Makoto Shinkai
+
+================================================================================
+                              GÉNEROS DISPONIBLES
+================================================================================
+
+SHONEN      - Para jóvenes (Dragon Ball, Naruto, One Piece)
+SHOJO       - Para chicas (Sailor Moon, Fruits Basket)
+SEINEN      - Para adultos (Attack on Titan, Berserk)
+JOSEI       - Para mujeres adultas
+MECHA       - Robots gigantes (Evangelion, Gundam)
+ISEKAI      - Otro mundo (Re:Zero, SAO)
+SLICE_OF_LIFE - Vida cotidiana (Bocchi, K-On)
+
+================================================================================
+                              ESTADOS
+================================================================================
+
+POR_VER     - Pendiente de ver
+VIENDO      - En progreso
+FINALIZADO  - Completado
+ABANDONADO  - Dejado sin terminar
+
+================================================================================
+                           PERSISTENCIA
+================================================================================
+
+Los datos se guardan automáticamente en:
+- data/animes.dat  (catálogo)
+- data/listas.dat  (listas personalizadas)
+
+================================================================================
+                         TEMA VISUAL: WISTERIA
+================================================================================
+
+- Colores: Violetas suaves + Grises claros
+- Fuente: Gill Sans MT
+- Pestañas redondeadas personalizadas
+- Compatible con Java 8+
+
+================================================================================
+                           ARCHIVOS DEL PROYECTO
+================================================================================
+
+ClasificadorAnime.bat    →  Ejecutar la aplicación
+catalogo_importar.txt    →  Catálogo de ejemplo para importar
+ACTUALIZACIONES.txt      →  Historial de cambios
+LIBRERIAS_JAVA.txt       →  Librerías de Java usadas
+UTILIDADES.txt           →  Clases utilitarias del proyecto
+MANUAL_USUARIO.txt       →  Este archivo
+
+================================================================================
+                              ATAJOS DE TECLADO
+================================================================================
+
+Ctrl+S  →  Guardar
+Ctrl+I  →  Importar TXT
+Ctrl+E  →  Exportar TXT
+Alt+F4  →  Salir
+
+================================================================================
+
+

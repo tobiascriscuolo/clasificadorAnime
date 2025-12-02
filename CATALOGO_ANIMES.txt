@@ -1,0 +1,162 @@
+# CATÁLOGO DE ANIMES PARA CARGAR
+# ================================
+# Usá estos datos para cargar en la aplicación
+
+================================================================================
+                                 SERIES
+================================================================================
+
+1. Attack on Titan
+   - Año: 2013
+   - Estudio: Wit Studio / MAPPA
+   - Capítulos: 94
+   - Géneros: Shonen, Seinen
+   - Estado: Finalizado
+   - Calificación: ★★★★★ (5)
+
+2. Death Note
+   - Año: 2006
+   - Estudio: Madhouse
+   - Capítulos: 37
+   - Géneros: Shonen, Seinen
+   - Estado: Finalizado
+   - Calificación: ★★★★★ (5)
+
+3. Fullmetal Alchemist: Brotherhood
+   - Año: 2009
+   - Estudio: Bones
+   - Capítulos: 64
+   - Géneros: Shonen
+   - Estado: Finalizado
+   - Calificación: ★★★★★ (5)
+
+4. Demon Slayer: Kimetsu no Yaiba
+   - Año: 2019
+   - Estudio: Ufotable
+   - Capítulos: 55
+   - Géneros: Shonen
+   - En emisión: Sí
+   - Estado: Viendo
+   - Calificación: ★★★★★ (5)
+
+5. Spy x Family
+   - Año: 2022
+   - Estudio: Wit Studio / CloverWorks
+   - Capítulos: 37
+   - Géneros: Shonen, Slice of Life
+   - En emisión: Sí
+   - Estado: Viendo
+   - Calificación: ★★★★ (4)
+
+6. Jujutsu Kaisen
+   - Año: 2020
+   - Estudio: MAPPA
+   - Capítulos: 47
+   - Géneros: Shonen
+   - En emisión: Sí
+   - Estado: Viendo
+   - Calificación: ★★★★★ (5)
+
+7. Steins;Gate
+   - Año: 2011
+   - Estudio: White Fox
+   - Capítulos: 24
+   - Géneros: Seinen
+   - Estado: Finalizado
+   - Calificación: ★★★★★ (5)
+
+8. Neon Genesis Evangelion
+   - Año: 1995
+   - Estudio: Gainax
+   - Capítulos: 26
+   - Géneros: Mecha, Seinen
+   - Estado: Finalizado
+   - Calificación: ★★★★ (4)
+
+9. Re:Zero
+   - Año: 2016
+   - Estudio: White Fox
+   - Capítulos: 50
+   - Géneros: Isekai
+   - Estado: Finalizado
+   - Calificación: ★★★★ (4)
+
+10. Bocchi the Rock!
+    - Año: 2022
+    - Estudio: CloverWorks
+    - Capítulos: 12
+    - Géneros: Slice of Life
+    - Estado: Finalizado
+    - Calificación: ★★★★★ (5)
+
+11. Chainsaw Man
+    - Año: 2022
+    - Estudio: MAPPA
+    - Capítulos: 12
+    - Géneros: Shonen, Seinen
+    - En emisión: Sí
+    - Estado: Por ver
+    - Calificación: (sin calificar)
+
+12. Solo Leveling
+    - Año: 2024
+    - Estudio: A-1 Pictures
+    - Capítulos: 12
+    - Géneros: Shonen, Isekai
+    - En emisión: Sí
+    - Estado: Por ver
+    - Calificación: (sin calificar)
+
+================================================================================
+                                PELÍCULAS
+================================================================================
+
+13. Your Name (Kimi no Na wa)
+    - Año: 2016
+    - Estudio: CoMix Wave Films
+    - Duración: 107 minutos
+    - Director: Makoto Shinkai
+    - Géneros: Shojo, Slice of Life
+    - Estado: Finalizado
+    - Calificación: ★★★★★ (5)
+
+14. El viaje de Chihiro (Spirited Away)
+    - Año: 2001
+    - Estudio: Studio Ghibli
+    - Duración: 125 minutos
+    - Director: Hayao Miyazaki
+    - Géneros: Shojo
+    - Estado: Finalizado
+    - Calificación: ★★★★★ (5)
+
+15. A Silent Voice (Koe no Katachi)
+    - Año: 2016
+    - Estudio: Kyoto Animation
+    - Duración: 130 minutos
+    - Director: Naoko Yamada
+    - Géneros: Shonen, Slice of Life
+    - Estado: Finalizado
+    - Calificación: ★★★★★ (5)
+
+================================================================================
+                               RESUMEN
+================================================================================
+
+Total: 15 animes (12 series + 3 películas)
+
+Por estado:
+- Finalizado: 10
+- Viendo: 3
+- Por ver: 2
+
+Por género más frecuente:
+- Shonen: 9
+- Seinen: 4
+- Slice of Life: 4
+- Isekai: 2
+- Shojo: 2
+- Mecha: 1
+
+================================================================================
+
+

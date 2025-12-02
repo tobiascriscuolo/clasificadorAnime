@@ -1,0 +1,278 @@
+@startuml
+title Diagrama de Clases - Vista (Interfaz Gráfica)
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor #F5F5FF
+    BorderColor #9370DB
+}
+
+package "vista" {
+    
+    class VentanaPrincipal <<JFrame>> {
+        -panelPestanas: JTabbedPane
+        -panelAnime: PanelAnime
+        -panelListas: PanelListas
+        -panelRecomendaciones: PanelRecomendaciones
+        -panelEstadisticas: PanelEstadisticas
+        --
+        +VentanaPrincipal()
+        -inicializarComponentes(): void
+        -configurarTemaOscuro(): void
+        -crearPestanas(): void
+        --
+        +{static} main(args: String[]): void
+    }
+    
+    class PanelAnime <<JPanel>> {
+        -tablaAnime: JTable
+        -modeloTabla: AnimeTableModel
+        -servicioAnime: ServicioAnime
+        -servicioLista: ServicioListaPersonalizada
+        -campoTitulo: JTextField
+        -comboGenero: JComboBox<Genero>
+        -comboEstado: JComboBox<Estado>
+        ==
+        <color:green><b>Botones de Acción:</b></color>
+        -btnNuevaSerie: JButton <color:green><b>[+ verde]</b></color>
+        -btnNuevaPelicula: JButton <color:green><b>[+ verde]</b></color>
+        -btnEditar: JButton <color:orange><b>[✏ lápiz]</b></color>
+        -btnEliminar: JButton <color:red><b>[✕ cruz]</b></color>
+        -btnCalificar: JButton <color:gold><b>[★ estrella]</b></color>
+        --
+        +PanelAnime(servicioAnime, servicioLista)
+        -inicializarComponentes(): void
+        -crearBarraHerramientas(): JPanel
+        -crearPanelFiltros(): JPanel
+        -crearTabla(): JScrollPane
+        --
+        -aplicarFiltros(): void
+        -mostrarDialogoNuevaSerie(): void
+        -mostrarDialogoNuevaPelicula(): void
+        -editarAnimeSeleccionado(): void
+        -eliminarAnimeSeleccionado(): void
+        -calificarAnimeSeleccionado(): void
+        +actualizarTabla(): void
+    }
+    
+    class PanelListas <<JPanel>> {
+        -listaListas: JList<ListaPersonalizada>
+        -tablaAnimes: JTable
+        -servicioLista: ServicioListaPersonalizada
+        -servicioAnime: ServicioAnime
+        ==
+        <color:green><b>Botones de Acción:</b></color>
+        -btnNuevaLista: JButton <color:green><b>[+ verde]</b></color>
+        -btnEditarLista: JButton <color:orange><b>[✏ lápiz]</b></color>
+        -btnEliminarLista: JButton <color:red><b>[✕ cruz]</b></color>
+        --
+        +PanelListas(servicioLista, servicioAnime)
+        -inicializarComponentes(): void
+        -crearPanelIzquierdo(): JPanel
+        -crearPanelDerecho(): JPanel
+        --
+        -crearNuevaLista(): void
+        -editarListaSeleccionada(): void
+        -eliminarListaSeleccionada(): void
+        -agregarAnimeALista(): void
+        -quitarAnimeDeLista(): void
+        +actualizarVista(): void
+    }
+    
+    class PanelRecomendaciones <<JPanel>> {
+        -tablaRecomendaciones: JTable
+        -comboTipoCriterio: JComboBox<String>
+        -comboGenero: JComboBox<Genero>
+        -spinnerCantidad: JSpinner
+        -servicioRecomendacion: ServicioRecomendacion
+        --
+        +PanelRecomendaciones(servicioRecomendacion)
+        -inicializarComponentes(): void
+        -crearPanelConfiguracion(): JPanel
+        -crearTablaResultados(): JScrollPane
+        --
+        -obtenerRecomendaciones(): void
+        -actualizarCriteriosDisponibles(): void
+        +actualizarVista(): void
+    }
+    
+    class PanelEstadisticas <<JPanel>> {
+        -servicioEstadisticas: ServicioEstadisticas
+        -lblTotalAnimes: JLabel
+        -lblPromedioGlobal: JLabel
+        -panelGraficos: JPanel
+        --
+        +PanelEstadisticas(servicioEstadisticas)
+        -inicializarComponentes(): void
+        -crearTarjetasResumen(): JPanel
+        -crearPanelDistribucion(): JPanel
+        --
+        -actualizarEstadisticas(): void
+        -dibujarGraficoGeneros(Graphics): void
+        +actualizarVista(): void
+    }
+    
+    class DialogoAnimeSerie <<JDialog>> {
+        -anime: AnimeSerie
+        -campoTitulo: JTextField
+        -campoAnio: JSpinner
+        -campoEstudio: JTextField
+        -campoCapitulos: JSpinner
+        -checkEnEmision: JCheckBox
+        -listaGeneros: JList<Genero>
+        -confirmado: boolean
+        --
+        +DialogoAnimeSerie(parent: Frame)
+        +DialogoAnimeSerie(parent: Frame, anime: AnimeSerie)
+        -inicializarComponentes(): void
+        -cargarDatosAnime(): void
+        +obtenerAnimeResultante(): AnimeSerie
+        +fueConfirmado(): boolean
+    }
+    
+    class DialogoAnimePelicula <<JDialog>> {
+        -anime: AnimePelicula
+        -campoTitulo: JTextField
+        -campoAnio: JSpinner
+        -campoEstudio: JTextField
+        -campoDuracion: JSpinner
+        -campoDirector: JTextField
+        -listaGeneros: JList<Genero>
+        -confirmado: boolean
+        --
+        +DialogoAnimePelicula(parent: Frame)
+        +DialogoAnimePelicula(parent: Frame, anime: AnimePelicula)
+        -inicializarComponentes(): void
+        -cargarDatosAnime(): void
+        +obtenerAnimeResultante(): AnimePelicula
+        +fueConfirmado(): boolean
+    }
+    
+    ' Clases internas para tabla
+    class "PanelAnime.AnimeTableModel" as ATM <<TableModel>> {
+        -animes: List<AnimeBase>
+        --
+        +obtenerAnimeEnFila(fila: int): AnimeBase
+        +getColumnCount(): int
+        +getRowCount(): int
+        +getValueAt(row, col): Object
+        +getColumnName(col): String
+        +setAnimes(animes: List): void
+    }
+    
+    ' ========================================
+    ' ICONOS PERSONALIZADOS
+    ' ========================================
+    
+    class IconoMas <<Icon>> #90EE90 {
+        <color:green><b>+ (verde)</b></color>
+        -tamanio: int
+        -color: Color = GREEN
+        --
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja símbolo "+"
+        para Nueva Serie/Película
+    }
+    
+    class IconoLapiz <<Icon>> #FFE4B5 {
+        <color:orange><b>✏ (naranja)</b></color>
+        -tamanio: int
+        -color: Color = ORANGE
+        --
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja lápiz
+        para Editar
+    }
+    
+    class IconoCruz <<Icon>> #FFB6C1 {
+        <color:red><b>✕ (rojo)</b></color>
+        -tamanio: int
+        -color: Color = RED
+        --
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja cruz "X"
+        para Eliminar
+    }
+    
+    class IconoEstrella <<Icon>> #FFD700 {
+        <color:gold><b>★ (amarillo)</b></color>
+        -tamanio: int
+        -color: Color = YELLOW/GOLD
+        --
+        +paintIcon(c, g, x, y): void
+        +getIconWidth(): int
+        +getIconHeight(): int
+        ..
+        Dibuja estrella
+        para Calificar
+    }
+    
+    class RenderizadorEstrellas <<TableCellRenderer>> {
+        Muestra ★★★★★ amarillas
+        en columna de calificación
+        --
+        +getTableCellRendererComponent(...): Component
+        -crearTextoEstrellas(calificacion: int): String
+    }
+}
+
+' Composición
+VentanaPrincipal *-- PanelAnime
+VentanaPrincipal *-- PanelListas
+VentanaPrincipal *-- PanelRecomendaciones
+VentanaPrincipal *-- PanelEstadisticas
+
+PanelAnime *-- ATM
+PanelAnime ..> DialogoAnimeSerie : crea
+PanelAnime ..> DialogoAnimePelicula : crea
+PanelAnime *-- RenderizadorEstrellas
+
+' Uso de iconos
+PanelAnime ..> IconoMas : usa
+PanelAnime ..> IconoLapiz : usa
+PanelAnime ..> IconoCruz : usa
+PanelAnime ..> IconoEstrella : usa
+PanelListas ..> IconoMas : usa
+PanelListas ..> IconoLapiz : usa
+PanelListas ..> IconoCruz : usa
+
+' Dependencias con servicios
+PanelAnime --> ServicioAnime : usa
+PanelAnime --> ServicioListaPersonalizada : usa
+PanelListas --> ServicioListaPersonalizada : usa
+PanelListas --> ServicioAnime : usa
+PanelRecomendaciones --> ServicioRecomendacion : usa
+PanelEstadisticas --> ServicioEstadisticas : usa
+
+note bottom of VentanaPrincipal
+    <b>GRASP - Controller:</b>
+    Coordina la inicialización
+    y comunicación entre paneles
+end note
+
+note right of PanelAnime
+    <b>Barra de Herramientas:</b>
+    <color:green>[+]</color> Nueva Serie
+    <color:green>[+]</color> Nueva Película
+    <color:orange>[✏]</color> Editar
+    <color:red>[✕]</color> Eliminar
+    <color:gold>[★]</color> Calificar
+end note
+
+note bottom of IconoEstrella
+    <b>Iconos Personalizados:</b>
+    Cada icono es una clase que
+    implementa javax.swing.Icon
+    y dibuja gráficos vectoriales
+end note
+
+@enduml

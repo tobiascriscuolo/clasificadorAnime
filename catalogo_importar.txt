@@ -1,0 +1,22 @@
+# Catálogo de Anime - Exportado
+# Formato: TIPO|TITULO|AÑO|ESTUDIO|DURACION|GENEROS|ESTADO|CALIFICACION|EXTRA
+# EXTRA para series: EN_EMISION (true/false)
+# EXTRA para películas: DIRECTOR
+#
+SERIE|Attack on Titan|2013|Wit Studio / MAPPA|94|SHONEN,SEINEN|FINALIZADO|5|false
+SERIE|Death Note|2006|Madhouse|37|SHONEN,SEINEN|FINALIZADO|5|false
+SERIE|Fullmetal Alchemist Brotherhood|2009|Bones|64|SHONEN|FINALIZADO|5|false
+SERIE|Demon Slayer Kimetsu no Yaiba|2019|Ufotable|55|SHONEN|VIENDO|5|true
+SERIE|Spy x Family|2022|Wit Studio / CloverWorks|37|SHONEN,SLICE_OF_LIFE|VIENDO|4|true
+SERIE|Jujutsu Kaisen|2020|MAPPA|47|SHONEN|VIENDO|5|true
+SERIE|Steins Gate|2011|White Fox|24|SEINEN|FINALIZADO|5|false
+SERIE|Neon Genesis Evangelion|1995|Gainax|26|MECHA,SEINEN|FINALIZADO|4|false
+SERIE|Re Zero|2016|White Fox|50|ISEKAI|FINALIZADO|4|false
+SERIE|Bocchi the Rock|2022|CloverWorks|12|SLICE_OF_LIFE|FINALIZADO|5|false
+SERIE|Chainsaw Man|2022|MAPPA|12|SHONEN,SEINEN|POR_VER|0|true
+SERIE|Solo Leveling|2024|A-1 Pictures|12|SHONEN,ISEKAI|POR_VER|0|true
+PELICULA|Your Name Kimi no Na wa|2016|CoMix Wave Films|107|SHOJO,SLICE_OF_LIFE|FINALIZADO|5|Makoto Shinkai
+PELICULA|El viaje de Chihiro|2001|Studio Ghibli|125|SHOJO|FINALIZADO|5|Hayao Miyazaki
+PELICULA|A Silent Voice|2016|Kyoto Animation|130|SHONEN,SLICE_OF_LIFE|FINALIZADO|5|Naoko Yamada
+
+
